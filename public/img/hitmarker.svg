@@ -1,0 +1,10 @@
+<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <line x1="8" y1="8" x2="14" y2="14" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+  <line x1="8" y1="8" x2="14" y2="14" stroke="#cccccc" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <line x1="32" y1="8" x2="26" y2="14" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+  <line x1="32" y1="8" x2="26" y2="14" stroke="#cccccc" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <line x1="8" y1="32" x2="14" y2="26" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+  <line x1="8" y1="32" x2="14" y2="26" stroke="#cccccc" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <line x1="32" y1="32" x2="26" y2="26" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+  <line x1="32" y1="32" x2="26" y2="26" stroke="#cccccc" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+</svg>

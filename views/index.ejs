@@ -1,0 +1,203 @@
+<%
+    const siteUrl = 'https://iw4x.dev';
+    const docsUrl = 'https://docs.iw4x.dev';
+    const downloadUrl = 'https://docs.iw4x.dev/install/launcher';
+    const githubUrl = 'https://github.com/iw4x';
+    const contactEmail = 'hi [at] iw4x [dot] dev';
+    const pageTitle = `IW4x - Call of Duty Modern Warfare 2`;
+    const metaDescription = `Download IW4x, the ultimate Call of Duty Modern Warfare 2 modification. Enhanced gameplay, dedicated servers, custom maps, and active community. Safe and open source.`;
+    const ogDescription = `IW4x enhances Call of Duty Modern Warfare 2 (2009) with improved security, dedicated servers, and extensive modding capabilities. Join the ultimate MW2 experience.`;
+    const heroDescription = `IW4x is a community-driven modification for Call of Duty Modern Warfare 2 (2009) that enhances the game with improved security, dedicated servers, and extensive modding capabilities.`;
+    const cssVersion = 000002;
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle %></title>
+    <meta name="description" content="<%= metaDescription %>">
+    <meta name="keywords" content="IW4x, Call of Duty, Modern Warfare 2, MW2, COD, modification, mod, dedicated servers, custom maps, FPS, gaming">
+    <meta name="author" content="IW4x Project">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="<%= siteUrl %>">
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="apple-touch-icon-precomposed" href="/favicon.png">
+
+    <meta property="og:title" content="IW4x - Call of Duty Modern Warfare 2">
+    <meta property="og:description" content="<%= ogDescription %>">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="<%= siteUrl %>">
+    <meta property="og:site_name" content="IW4x">
+    <meta property="og:locale" content="en_US">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="IW4x - Call of Duty Modern Warfare 2">
+    <meta name="twitter:description" content="<%= ogDescription %>">
+
+    <link rel="stylesheet" href="/css/style.css?v=<%= cssVersion %>">
+    <link rel="stylesheet" href="/fonts/titillium_web/titillium.css">
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <main class="main-content">
+            <section class="hero">
+                <div class="hero-content">
+                    <h1 class="hero-title">Experience Call of Duty<br><span class="highlight">Modern Warfare 2</span><br>Like Never Before</h1>
+                    <p class="hero-description">
+                        <%= heroDescription %>
+                    </p>
+
+                    <div class="cta-buttons">
+                        <a href="<%= downloadUrl %>" class="btn btn-primary btn-large">
+                            <span class="btn-icon"><i data-lucide="download"></i></span>
+                            Download
+                        </a>
+                        <a href="https://discord.com/invite/pV2qJscTXf" class="btn btn-discord btn-large">
+                            <span class="btn-icon"><img src="/img/discord.svg" alt="Discord" width="20" height="20"></span>
+                            Discord
+                        </a>
+                        <a href="<%= docsUrl %>" class="btn btn-secondary btn-large">
+                            <span class="btn-icon"><i data-lucide="book-open"></i></span>
+                            Documentation
+                        </a>
+                        <a href="<%= githubUrl %>" class="btn btn-secondary btn-large">
+                            <span class="btn-icon"><i data-lucide="github"></i></span>
+                            GitHub
+                        </a>
+                    </div>
+                </div>
+
+                <div class="hero-visual">
+                    <div class="video-container">
+                        <div class="game-frame">
+                            <video id="gameVideo" width="100%" height="100%" muted loop autoplay playsinline preload="metadata" volume="0" style="object-fit: cover; border-radius: 10px;" aria-label="IW4x Call of Duty Modern Warfare 2 gameplay footage">
+                                <source src="/videos/gameplay.mp4" type="video/mp4">
+                                <source src="/videos/gameplay.webm" type="video/webm">
+                                Your browser does not support the video tag.
+                            </video>
+                            <div class="frame-content">
+                            </div>
+                        </div>
+                        <div class="video-credit">
+                            <a href="https://youtube.com/watch?v=lh_vg9TaCAw" target="_BLANK" rel="noopener noreferrer">BETTER DAYS by Snufkin</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="player-stats">
+                <div class="stats-container">
+                    <div class="current-stats">
+                        <p class="join-message">Join <span id="current-players">-</span> players on <span id="current-servers">-</span> servers!</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="playerChart" width="800" height="150"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section class="features">
+                <h2>Why play IW4x?</h2>
+                <div class="features-grid">
+                    <article class="feature-card">
+                        <div class="feature-icon"><i data-lucide="gamepad-2"></i></div>
+                        <h3>Enhanced Security</h3>
+                        <p>IW4x fixes <b>multiple</b> serious security issues in the orginal game.</p>
+                        <p>
+                            Some of these exploits have been known for a long time and put your computer, data & privacy at risk.<br>
+                            Remember when a malware spread through MW2 in 2023? <a target="_BLANK" href="https://www.bitdefender.com/en-us/blog/hotforsecurity/self-spreading-malware-targets-lobbies-of-call-of-duty-modern-warfare-2-2009">Yeah</a>.
+                        </p>
+                        <p>
+                            All currently known vulnerabilities have been fixed in IW4x and we take pride in making sure that you stay safe.
+                        </p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon"><i data-lucide="wrench"></i></div>
+                        <h3>Modding Capabilites</h3>
+                        <p>
+                            From replacing textures, creating custom functionality to loading custom maps, weapons, player models - IW4x enables you to do <b>all</b> of that.
+                        </p>
+                        <p>
+                            Neon pink camo? Go for it. Play Nuketown? We already got that for you! Use the M40A3 from CoD4? Also already done.
+                        </p>
+                        <p>
+                            One of the most used mods is Bot Warfare, which allows you to play against more thought out Bots than most triple AAA games include.
+                        </p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon"><i data-lucide="globe"></i></div>
+                        <h3>Dedicated Servers</h3>
+                        <p>The origin of MW2 Clients, re-adding Dedicated Servers just like they've been available on CoD4.</p>
+                        <p>
+                            You can host your own dedicated server, allowing you to play with friends or other players around the world.
+                            You can be in control and tweak the game exactly to your liking - and remove players that you don't want to play with.
+                        </p>
+                        <p>
+                            Don't want to create your own server? There are a lot of community hosted servers for you to join, without any extra work!
+                        </p>
+                    </article>
+                </div>
+            </section>
+
+            <section class="keywords">
+                <div class="keywords-container">
+                    <div class="keyword-tag keyword-green-1">Dedicated servers</div>
+                    <div class="keyword-tag keyword-green-4">Modding</div>
+                    <div class="keyword-tag keyword-green-3">Custom textures</div>
+                    <div class="keyword-tag keyword-green-1">Enhanced security</div>
+                    <div class="keyword-tag keyword-green-3">Unlocked FPS & FOV</div>
+                    <div class="keyword-tag keyword-green-2">Raw mouse input</div>
+                    <div class="keyword-tag keyword-green-4">New color codes</div>
+                    <div class="keyword-tag keyword-green-2">Controller support</div>
+                    <div class="keyword-tag keyword-green-5"><a href="<%= githubUrl %>">Open Source</a></div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p><%= current_year %> - IW4x Project</p>
+
+            <p>
+                IW4x is in no way affiliated with or endorsed by Activision Publishing, Inc., Activision Blizzard,
+                Microsoft, Microsoft Gaming, Infinity Ward, Inc., or any other copyright holder.
+            </p>
+
+            <p>
+                IW4x is an <a href="<%= githubUrl %>">Open Source</a> community project made with love for the game, striving to provide a safe and expandable platform to keep our favourite video game alive.
+            </p>
+
+            <p>
+                Contact <b><%= contactEmail %></b>
+            </p>
+
+            <div class="pride-flag-bar">
+                <div class="pride-color pride-red"></div>
+                <div class="pride-color pride-orange"></div>
+                <div class="pride-color pride-yellow"></div>
+                <div class="pride-color pride-green"></div>
+                <div class="pride-color pride-blue"></div>
+                <div class="pride-color pride-purple"></div>
+                <div class="pride-color pride-brown"></div>
+                <div class="pride-color pride-black"></div>
+                <div class="pride-color pride-light-blue"></div>
+                <div class="pride-color pride-pink"></div>
+                <div class="pride-color pride-white"></div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        window.playerStatsData = <%- JSON.stringify(playerStats) %>;
+    </script>
+    <script src="/js/script.js"></script>
+</body>
+</html>
