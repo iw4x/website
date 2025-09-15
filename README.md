@@ -1,2 +1,2 @@
 # IW4x Website
-[iw4x.dev](https://iw4x.dev)
+[iw4x.io](https://iw4x.io)
