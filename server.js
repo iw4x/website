@@ -86,46 +86,6 @@ function fetchPlayerStats() {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use((req, res, next) => {
-    if (req.hostname === 'www.iw4x.io') {
-        const newUrl = `https://iw4x.io${req.path}`;
-        return res.redirect(301, newUrl);
-    }
-    if (req.hostname === 'iw4x.getserve.rs' && !req.path.startsWith('/v1')) {
-        const newUrl = `https://iw4x.io${req.path}`;
-        return res.redirect(301, newUrl);
-    }
-    if (req.path === '/discord') {
-        return res.redirect(301, 'https://discord.com/invite/pV2qJscTXf');
-    }
-    if (req.path === '/install' || req.path === '/download') {
-        return res.redirect(301, 'https://docs.iw4x.io/install/launcher');
-    }
-    if (req.path === '/docs') {
-        return res.redirect(301, 'https://docs.iw4x.io/');
-    }
-    if (req.path === '/guides') {
-        return res.redirect(301, 'https://docs.iw4x.io/');
-    }
-    if (req.path === '/guides/install') {
-        return res.redirect(301, 'https://docs.iw4x.io/install/launcher');
-    }
-    if (req.path === '/guides/console') {
-        return res.redirect(301, 'https://docs.iw4x.io/guides/console');
-    }
-    if (req.path === '/guides/colorcodes') {
-        return res.redirect(301, 'https://docs.iw4x.io/guides/color-codes');
-    }
-    if (req.path === '/guides/botwarfare') {
-        return res.redirect(301, 'https://docs.iw4x.io/guides/botwarfare');
-    }
-    if (req.path === '/guides/disable-mod-unloading') {
-        return res.redirect(301, 'https://docs.iw4x.io/guides/cli-args/');
-    }
-
-    next();
-});
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', async (req, res) => {
