@@ -240,6 +240,16 @@ a, button, .btn, [role="button"], input[type="button"], input[type="submit"] {
     --glare-opacity: 0.25;
 }
 
+.game-frame video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
 .game-frame::before {
     content: '';
     position: absolute;
