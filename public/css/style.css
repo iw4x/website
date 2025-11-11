@@ -727,26 +727,6 @@ a:hover {
   background-color: var(--pride-white);
 }
 
-.hitmarker {
-  position: fixed;
-  width: 40px;
-  height: 40px;
-  background-image: url('/img/hitmarker.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  pointer-events: none;
-  z-index: 10001;
-  opacity: 0;
-  transform: scale(0.5);
-  transition: all 0.3s ease;
-}
-
-.hitmarker.show {
-  opacity: 1;
-  transform: scale(1);
-}
-
 .theme-toggle {
   position: fixed;
   top: 20px;
