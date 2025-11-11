@@ -172,16 +172,6 @@ show_hitmarker (x, y)
 }
 
 function
-init_cursor_effects ()
-{
-  if (window.innerWidth <= 480)
-    return;
-
-  document.addEventListener('mousedown',
-    e => show_hitmarker(e.clientX, e.clientY));
-}
-
-function
 update_current_stats (d)
 {
   const p = document.getElementById('current-players');
@@ -293,7 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof lucide !== 'undefined')
     lucide.createIcons();
 
-  init_cursor_effects();
   init_player_stats();
 
   const v = document.getElementById('gameVideo');
