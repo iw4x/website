@@ -166,7 +166,6 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   min-height: 100vh;
-  cursor: url('/img/crosshair-dimmed.svg') 16 16, auto;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -194,15 +193,6 @@ a {
 
 a:hover {
   color: var(--primary-green-hover);
-}
-
-a,
-button,
-.btn,
-[role="button"],
-input[type="button"],
-input[type="submit"] {
-  cursor: url('/img/crosshair.svg') 16 16, pointer !important;
 }
 
 .container {
@@ -234,7 +224,6 @@ input[type="submit"] {
   font-size: 1.1rem;
   transition: all 0.3s ease;
   border: 2px solid transparent;
-  cursor: pointer;
   font-family: inherit;
   white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
@@ -635,7 +624,6 @@ input[type="submit"] {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   transition: all 0.3s ease;
-  cursor: default;
   white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
 }
@@ -669,15 +657,6 @@ input[type="submit"] {
 
 .keyword-green-5 {
   background: var(--keyword-green-5);
-}
-
-.keyword,
-.keyword-green-1,
-.keyword-green-2,
-.keyword-green-3,
-.keyword-green-4,
-.keyword-green-5 {
-  cursor: inherit !important;
 }
 
 .footer {
@@ -781,7 +760,6 @@ input[type="submit"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px var(--shadow-md);
   color: var(--text-primary);
@@ -1195,20 +1173,6 @@ input[type="submit"] {
 
   h2 {
     font-size: 1.6rem;
-  }
-
-  /* Disable custom cursors on mobile */
-  body {
-    cursor: auto;
-  }
-
-  a,
-  button,
-  .btn,
-  [role="button"],
-  input[type="button"],
-  input[type="submit"] {
-    cursor: pointer !important;
   }
 }
 
