@@ -67,8 +67,8 @@ video {
   --text-tertiary:           oklab(60% 0 0);
   --text-inverse:            oklab(95% 0 0);
   --text-on-primary:         oklab(98% 0 0);
-  --discord-blurple:         oklab(58% -0.03 -0.15);
-  --discord-blurple-hover:   oklab(63% -0.03 -0.15);
+  --discord-blurple:         oklab(56% 0.01 -0.19);
+  --discord-blurple-hover:   oklab(51% 0.01 -0.19);
   --video-credit-color:      oklab(55% 0 0);
   --video-credit-hover:      oklab(40% 0 0);
   --keyword-green-1:         oklab(70% -0.09 0.09);
@@ -104,8 +104,8 @@ video {
   --text-tertiary:           #808080;
   --text-inverse:            #1a1a1a;
   --text-on-primary:         #ffffff;
-  --discord-blurple:         oklab(52% -0.04 -0.18);
-  --discord-blurple-hover:   oklab(57% -0.04 -0.18);
+  --discord-blurple:         oklab(56% 0.01 -0.19);
+  --discord-blurple-hover:   oklab(51% 0.01 -0.19);
   --video-credit-color:      oklab(55% 0 0);
   --video-credit-hover:      oklab(70% 0 0);
   --keyword-green-1:         oklab(60% -0.11 0.11);
@@ -142,8 +142,8 @@ video {
     --text-tertiary:         oklab(60% 0 0);
     --text-inverse:          oklab(20% 0 0);
     --text-on-primary:       oklab(100% 0 0);
-    --discord-blurple:       oklab(52% -0.04 -0.18);
-    --discord-blurple-hover: oklab(57% -0.04 -0.18);
+    --discord-blurple:       oklab(56% 0.01 -0.19);
+    --discord-blurple-hover: oklab(51% 0.01 -0.19);
     --video-credit-color:    oklab(55% 0 0);
     --video-credit-hover:    oklab(70% 0 0);
     --keyword-green-1:       oklab(60% -0.11 0.11);
