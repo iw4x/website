@@ -1,30 +1,14 @@
 let playerChart = null;
 
 function
-set_theme (t)
-{
-  document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem('theme', t);
-}
-
-function
 init_theme ()
 {
-  const s = localStorage.getItem('theme');
   const sys = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', sys ? 'dark' : 'light');
 
-  if (s !== null)
-    set_theme(s);
-  else
-    set_theme(sys ? 'dark' : 'light');
-}
-
-function
-toggle_theme ()
-{
-  const c = document.documentElement.getAttribute('data-theme');
-  const n = (c === 'dark' ? 'light' : 'dark');
-  set_theme(n);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+  });
 }
 
 function
