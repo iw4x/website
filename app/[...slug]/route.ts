@@ -1,6 +1,15 @@
-import { notFoundResponse } from "@/lib/http/responses";
+import type { NextRequest } from "next/server";
 
-function handle(): Response {
+import { findRedirect } from "@/lib/http/redirects";
+import { notFoundResponse, redirectResponse } from "@/lib/http/responses";
+
+function handle(request: NextRequest): Response {
+  const redirect = findRedirect(request.nextUrl.pathname);
+
+  if (redirect) {
+    return redirectResponse(redirect);
+  }
+
   return notFoundResponse();
 }
 

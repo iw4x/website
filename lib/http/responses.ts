@@ -1,5 +1,6 @@
 import { SITE } from "../site-config";
 import { cacheControlFor } from "./cache-control";
+import type { RedirectRule } from "./redirects";
 
 const NOT_FOUND = {
   title: "Not found",
@@ -44,6 +45,16 @@ export function notFoundResponse(): Response {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": cacheControlFor("notFound"),
       "X-Robots-Tag": "noindex",
+    },
+  });
+}
+
+export function redirectResponse(rule: RedirectRule): Response {
+  return new Response(null, {
+    status: rule.permanent ? 308 : 307,
+    headers: {
+      Location: rule.to,
+      "Cache-Control": cacheControlFor("redirect"),
     },
   });
 }

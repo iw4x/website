@@ -1,27 +1,45 @@
+import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 
 import { cacheControlFor } from "@/lib/http/cache-control";
 
 import { DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT } from "./route";
 
+function requestFor(pathname: string): NextRequest {
+  return new NextRequest(new URL(pathname, "https://iw4x.io"));
+}
+
 describe("catch-all route", () => {
   it("returns 404 for an unknown path", () => {
-    expect(GET().status).toBe(404);
+    expect(GET(requestFor("/nope")).status).toBe(404);
   });
 
   it("serves 404s with the shared notFound cache policy", () => {
-    expect(GET().headers.get("Cache-Control")).toBe(cacheControlFor("notFound"));
+    expect(GET(requestFor("/nope")).headers.get("Cache-Control")).toBe(cacheControlFor("notFound"));
   });
 
   it("serves 404s as HTML so browsers render them", async () => {
-    const response = GET();
+    const response = GET(requestFor("/nope"));
 
     expect(response.headers.get("Content-Type")).toContain("text/html");
     expect(await response.text()).toContain("Not found");
   });
 
   it("keeps 404s out of search indexes", () => {
-    expect(GET().headers.get("X-Robots-Tag")).toBe("noindex");
+    expect(GET(requestFor("/nope")).headers.get("X-Robots-Tag")).toBe("noindex");
+  });
+
+  it("redirects a known source with the shared redirect cache policy", () => {
+    const response = GET(requestFor("/docs"));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("Location")).toBe("https://docs.iw4x.io/");
+    expect(response.headers.get("Cache-Control")).toBe(cacheControlFor("redirect"));
+  });
+
+  it("matches redirects regardless of trailing slash or case", () => {
+    expect(GET(requestFor("/docs/")).status).toBe(307);
+    expect(GET(requestFor("/DOCS")).status).toBe(307);
   });
 
   it.each([
@@ -32,7 +50,7 @@ describe("catch-all route", () => {
     ["DELETE", DELETE],
     ["OPTIONS", OPTIONS],
   ])("answers %s with a cacheable 404 rather than a 405", (_method, handler) => {
-    const response = handler();
+    const response = handler(requestFor("/nope"));
 
     expect(response.status).toBe(404);
     expect(response.headers.get("Cache-Control")).toBe(cacheControlFor("notFound"));

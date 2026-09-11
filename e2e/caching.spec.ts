@@ -82,6 +82,14 @@ test.describe("cache policy", () => {
     expect(response.headers()["x-robots-tag"]).toContain("noindex");
   });
 
+  test("redirects are cacheable", async ({ request }) => {
+    const response = await request.get("/docs", { maxRedirects: 0 });
+
+    expect([307, 308]).toContain(response.status());
+    expect(response.headers().location).toBe("https://docs.iw4x.io/");
+    expectSharedCacheable(response.headers()["cache-control"]);
+  });
+
   test("content-hashed build output is immutable", async ({ request }) => {
     const html = await (await request.get("/")).text();
     const assetPath = html.match(/\/_next\/static\/[^"']+\.js/)?.[0];

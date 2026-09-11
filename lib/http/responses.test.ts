@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { SITE } from "../site-config";
 import { cacheControlFor } from "./cache-control";
-import { escapeHtml, notFoundResponse } from "./responses";
+import { escapeHtml, notFoundResponse, redirectResponse } from "./responses";
 
 describe("escapeHtml", () => {
   it("escapes every character that is significant in HTML", () => {
@@ -41,5 +41,31 @@ describe("notFoundResponse", () => {
     expect(html).toContain(`<title>Not found | ${SITE.name}</title>`);
     expect(html).toContain("<h1>Not found</h1>");
     expect(html).toContain('<a href="/">');
+  });
+});
+
+describe("redirectResponse", () => {
+  it("uses 307 for a temporary redirect", () => {
+    expect(redirectResponse({ from: "/a", to: "/b", permanent: false }).status).toBe(307);
+  });
+
+  it("uses 308 for a permanent redirect", () => {
+    expect(redirectResponse({ from: "/a", to: "/b", permanent: true }).status).toBe(308);
+  });
+
+  it("sets the destination", () => {
+    const response = redirectResponse({ from: "/a", to: "https://example.com/", permanent: false });
+
+    expect(response.headers.get("Location")).toBe("https://example.com/");
+  });
+
+  it.each([true, false])("carries the shared redirect cache policy (permanent: %s)", (permanent) => {
+    const response = redirectResponse({ from: "/a", to: "/b", permanent });
+
+    expect(response.headers.get("Cache-Control")).toBe(cacheControlFor("redirect"));
+  });
+
+  it("has no body", () => {
+    expect(redirectResponse({ from: "/a", to: "/b", permanent: true }).body).toBeNull();
   });
 });
