@@ -76,6 +76,16 @@ test.describe("cache policy", () => {
     expectSharedCacheable(response.headers()["cache-control"]);
   });
 
+  test("missing public assets keep the short 404 lifetime", async ({ request }) => {
+    const response = await request.get("/missing.png", { maxRedirects: 0 });
+
+    expect(response.status()).toBe(404);
+
+    const directives = expectSharedCacheable(response.headers()["cache-control"]);
+
+    expect(sharedLifetime(directives)).toBeLessThanOrEqual(600);
+  });
+
   test("404s are not indexable", async ({ request }) => {
     const response = await request.get("/this-path-does-not-exist");
 
@@ -88,6 +98,16 @@ test.describe("cache policy", () => {
     expect([307, 308]).toContain(response.status());
     expect(response.headers().location).toBe("https://docs.iw4x.io/");
     expectSharedCacheable(response.headers()["cache-control"]);
+  });
+
+  test("public assets are cacheable", async ({ request }) => {
+    const response = await request.get("/favicon.ico");
+
+    expect(response.status()).toBe(200);
+
+    const directives = expectSharedCacheable(response.headers()["cache-control"]);
+
+    expect(sharedLifetime(directives)).toBeGreaterThanOrEqual(3600);
   });
 
   test("content-hashed build output is immutable", async ({ request }) => {
