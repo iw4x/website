@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT } from "@/app/[lang]/[...slug]/route";
 import { cacheControlFor } from "@/lib/http/cache-control";
+import { DEFAULT_LOCALE } from "@/lib/i18n/config";
 
 function requestFor(pathname: string): NextRequest {
   return new NextRequest(new URL(pathname, "https://iw4x.io"));
@@ -43,6 +44,19 @@ describe("catch-all route", () => {
 
   it("looks redirects up without the locale prefix", () => {
     expect(GET(requestFor("/en/en/docs")).status).toBe(404);
+  });
+
+  it("serves 404s in the locale of the path", async () => {
+    const html = await GET(requestFor("/en/nope")).text();
+
+    expect(html).toContain('<html lang="en">');
+    expect(html).toContain('<a href="/en">');
+  });
+
+  it("serves 404s in the default locale for paths outside any locale", async () => {
+    const html = await GET(requestFor("/_next/static/chunks/missing.js")).text();
+
+    expect(html).toContain(`<html lang="${DEFAULT_LOCALE}">`);
   });
 
   it("serves cacheable 404s for paths outside any locale", () => {

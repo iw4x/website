@@ -80,6 +80,14 @@ test.describe("localised pages", () => {
       await expect(page.locator("html")).toHaveAttribute("lang", LOCALE_DETAILS[locale].tag);
     });
 
+    test(`404s under /${locale} are written in that locale`, async ({ page }) => {
+      const response = await page.goto(`/${locale}/this-path-does-not-exist`);
+
+      expect(response?.status()).toBe(404);
+      await expect(page.locator("html")).toHaveAttribute("lang", LOCALE_DETAILS[locale].tag);
+      await expect(page.getByRole("link")).toHaveAttribute("href", `/${locale}`);
+    });
+
     test(`/${locale} is cacheable for a long time`, async ({ request }) => {
       const response = await request.get(`/${locale}`, { maxRedirects: 0 });
 

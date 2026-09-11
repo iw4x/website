@@ -2,17 +2,17 @@ import type { NextRequest } from "next/server";
 
 import { findRedirect } from "@/lib/http/redirects";
 import { notFoundResponse, redirectResponse } from "@/lib/http/responses";
-import { splitLocale } from "@/lib/i18n/config";
+import { DEFAULT_LOCALE, splitLocale } from "@/lib/i18n/config";
 
 function handle(request: NextRequest): Response {
-  const { rest } = splitLocale(request.nextUrl.pathname);
+  const { locale, rest } = splitLocale(request.nextUrl.pathname);
   const redirect = findRedirect(rest);
 
   if (redirect) {
     return redirectResponse(redirect);
   }
 
-  return notFoundResponse();
+  return notFoundResponse(locale ?? DEFAULT_LOCALE);
 }
 
 export const GET = handle;

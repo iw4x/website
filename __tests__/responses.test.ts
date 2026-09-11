@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { cacheControlFor } from "@/lib/http/cache-control";
 import { escapeHtml, localeRedirectResponse, notFoundResponse, redirectResponse } from "@/lib/http/responses";
+import { DEFAULT_LOCALE, LOCALES, LOCALE_DETAILS } from "@/lib/i18n/config";
+import { ALL_DICTIONARIES } from "@/lib/i18n/dictionaries";
 import { SITE } from "@/lib/site-config";
 
 describe("escapeHtml", () => {
@@ -18,15 +20,15 @@ describe("escapeHtml", () => {
 
 describe("notFoundResponse", () => {
   it("uses the 404 status", () => {
-    expect(notFoundResponse().status).toBe(404);
+    expect(notFoundResponse(DEFAULT_LOCALE).status).toBe(404);
   });
 
   it("carries the shared notFound cache policy", () => {
-    expect(notFoundResponse().headers.get("Cache-Control")).toBe(cacheControlFor("notFound"));
+    expect(notFoundResponse(DEFAULT_LOCALE).headers.get("Cache-Control")).toBe(cacheControlFor("notFound"));
   });
 
   it("is HTML and stays out of search indexes", async () => {
-    const response = notFoundResponse();
+    const response = notFoundResponse(DEFAULT_LOCALE);
     const html = await response.text();
 
     expect(response.headers.get("Content-Type")).toBe("text/html; charset=utf-8");
@@ -34,13 +36,19 @@ describe("notFoundResponse", () => {
     expect(html).toContain('<meta name="robots" content="noindex">');
   });
 
-  it("names the site and links home", async () => {
-    const html = await notFoundResponse().text();
+  it.each(LOCALES)("is written in %s when that is the locale", async (locale) => {
+    const { title, message, homeLink } = ALL_DICTIONARIES[locale].notFound;
+    const html = await notFoundResponse(locale).text();
 
-    expect(html).toContain('<html lang="en">');
-    expect(html).toContain(`<title>Not found | ${SITE.name}</title>`);
-    expect(html).toContain("<h1>Not found</h1>");
-    expect(html).toContain('<a href="/">');
+    expect(html).toContain(`<html lang="${LOCALE_DETAILS[locale].tag}">`);
+    expect(html).toContain(`<title>${escapeHtml(title)} | ${SITE.name}</title>`);
+    expect(html).toContain(`<h1>${escapeHtml(title)}</h1>`);
+    expect(html).toContain(escapeHtml(message));
+    expect(html).toContain(escapeHtml(homeLink));
+  });
+
+  it.each(LOCALES)("links home within the %s locale", async (locale) => {
+    expect(await notFoundResponse(locale).text()).toContain(`<a href="/${locale}">`);
   });
 });
 
