@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 import { DEFAULT_LOCALE, LOCALES, LOCALE_DETAILS } from "../lib/i18n/config";
+import { ALL_DICTIONARIES } from "../lib/i18n/dictionaries";
+import { SITE } from "../lib/site-config";
 
 function sharedLifetime(cacheControl: string | undefined): number {
   return Number(/s-maxage=(\d+)/.exec(cacheControl ?? "")?.[1] ?? 0);
@@ -78,6 +80,31 @@ test.describe("localised pages", () => {
       await page.goto(`/${locale}`);
 
       await expect(page.locator("html")).toHaveAttribute("lang", LOCALE_DETAILS[locale].tag);
+    });
+
+    test(`/${locale} links its translations for search engines`, async ({ page }) => {
+      await page.goto(`/${locale}`);
+
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${SITE.url}/${locale}`);
+      await expect(page.locator('link[rel="alternate"][hreflang="x-default"]')).toHaveAttribute(
+        "href",
+        `${SITE.url}/${DEFAULT_LOCALE}`,
+      );
+
+      for (const supported of LOCALES) {
+        await expect(
+          page.locator(`link[rel="alternate"][hreflang="${LOCALE_DETAILS[supported].tag}"]`),
+        ).toHaveAttribute("href", `${SITE.url}/${supported}`);
+      }
+    });
+
+    test(`/${locale} is described in that locale`, async ({ page }) => {
+      await page.goto(`/${locale}`);
+
+      await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+        "content",
+        ALL_DICTIONARIES[locale].metadata.description,
+      );
     });
 
     test(`404s under /${locale} are written in that locale`, async ({ page }) => {
