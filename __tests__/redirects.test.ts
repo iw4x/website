@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { REDIRECTS, findRedirect, normalizePathname } from "./redirects";
+import { REDIRECTS, findRedirect, normalizePathname } from "@/lib/http/redirects";
 
 describe("normalizePathname", () => {
   it("strips trailing slashes", () => {

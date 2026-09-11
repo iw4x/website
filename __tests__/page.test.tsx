@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import Home from "./page";
+import Home from "@/app/page";
 
 describe("Home page", () => {
   it("renders an empty main landmark", () => {

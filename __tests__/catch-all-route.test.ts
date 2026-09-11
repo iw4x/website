@@ -1,9 +1,8 @@
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 
+import { DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT } from "@/app/[...slug]/route";
 import { cacheControlFor } from "@/lib/http/cache-control";
-
-import { DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT } from "./route";
 
 function requestFor(pathname: string): NextRequest {
   return new NextRequest(new URL(pathname, "https://iw4x.io"));

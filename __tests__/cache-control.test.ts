@@ -6,7 +6,7 @@ import {
   type CachePolicyName,
   cacheControl,
   cacheControlFor,
-} from "./cache-control";
+} from "@/lib/http/cache-control";
 
 const POLICY_NAMES = Object.keys(CACHE_POLICIES) as CachePolicyName[];
 

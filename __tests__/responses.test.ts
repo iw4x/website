@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { SITE } from "../site-config";
-import { cacheControlFor } from "./cache-control";
-import { escapeHtml, notFoundResponse, redirectResponse } from "./responses";
+import { cacheControlFor } from "@/lib/http/cache-control";
+import { escapeHtml, notFoundResponse, redirectResponse } from "@/lib/http/responses";
+import { SITE } from "@/lib/site-config";
 
 describe("escapeHtml", () => {
   it("escapes every character that is significant in HTML", () => {
