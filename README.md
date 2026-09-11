@@ -20,6 +20,19 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Testing
+
+Requires Node.js 22.12 or newer (see `.nvmrc`).
+
+| Command                 | Purpose                                                  |
+| ----------------------- | -------------------------------------------------------- |
+| `npm test`              | Run unit and component tests once (Vitest).              |
+| `npm run test:watch`    | Run unit tests in watch mode.                            |
+| `npm run test:coverage` | Run unit tests with coverage; fails below 80%.           |
+| `npm run test:e2e`      | Build and run end-to-end tests (Playwright).             |
+| `npm run test:e2e:ui`   | Open Playwright UI for debugging end-to-end tests.       |
+| `npm run typecheck`     | Type-check the project, test files included.             |
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
