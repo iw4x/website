@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { MAIN_CONTENT_ID, SkipLink } from "@/components/skip-link";
 import { LOCALES, LOCALE_DETAILS, isLocale } from "@/lib/i18n/config";
+import { getDictionaryFor } from "@/lib/i18n/dictionaries";
 import { localeMetadata } from "@/lib/i18n/metadata";
 
 import "../globals.css";
@@ -27,9 +29,16 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
     notFound();
   }
 
+  const dictionary = getDictionaryFor(lang);
+
   return (
     <html lang={LOCALE_DETAILS[lang].tag}>
-      <body>{children}</body>
+      <body>
+        <SkipLink label={dictionary.navigation.skipToContent} />
+        <main id={MAIN_CONTENT_ID} tabIndex={-1}>
+          {children}
+        </main>
+      </body>
     </html>
   );
 }

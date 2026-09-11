@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 import { LOCALES } from "../lib/i18n/config";
+import { ALL_DICTIONARIES } from "../lib/i18n/dictionaries";
 
 const AXE_TAGS = [
   "wcag2a",
@@ -204,6 +205,73 @@ test.describe("motion", () => {
         expect(durationInSeconds(transition)).toBeLessThanOrEqual(0.001);
         expect(durationInSeconds(animation)).toBeLessThanOrEqual(0.001);
       }
+    });
+  }
+});
+
+const MINIMUM_TARGET = 44;
+
+test.describe("keyboard navigation", () => {
+  test.beforeEach(({ browserName }) => {
+    test.skip(browserName === "webkit", "WebKit does not move focus to links with Tab by default");
+  });
+
+  for (const locale of LOCALES) {
+    test(`/${locale} offers a skip link as the first stop`, async ({ page }) => {
+      await page.goto(`/${locale}`);
+      await page.keyboard.press("Tab");
+
+      const skipLink = page.getByRole("link", { name: ALL_DICTIONARIES[locale].navigation.skipToContent });
+
+      await expect(skipLink).toBeFocused();
+      await expect(skipLink).toBeInViewport();
+
+      const box = await skipLink.boundingBox();
+
+      expect(box?.width ?? 0).toBeGreaterThanOrEqual(MINIMUM_TARGET);
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(MINIMUM_TARGET);
+
+      const unobscured = await skipLink.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+
+        return element.contains(document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2));
+      });
+
+      expect(unobscured).toBe(true);
+    });
+
+    test(`/${locale} skip link moves focus to the main content`, async ({ page }) => {
+      await page.goto(`/${locale}`);
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Enter");
+
+      await expect(page.getByRole("main")).toBeFocused();
+    });
+  }
+});
+
+test.describe("target size", () => {
+  for (const { name, path } of PAGES) {
+    test(`${name} gives every standalone target at least 44 by 44 pixels`, async ({ page }) => {
+      await page.goto(path);
+
+      const undersized = await page
+        .locator("a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex='-1'])")
+        .evaluateAll((elements, minimum) =>
+          elements
+            .filter((element) => {
+              const rect = element.getBoundingClientRect();
+              const visuallyHidden = rect.width <= 1 && rect.height <= 1;
+              const inline =
+                getComputedStyle(element).display === "inline" &&
+                (element.parentElement?.textContent?.trim() ?? "") !== (element.textContent?.trim() ?? "");
+
+              return !visuallyHidden && !inline && (rect.width < minimum || rect.height < minimum);
+            })
+            .map((element) => element.outerHTML.slice(0, 120)),
+        MINIMUM_TARGET);
+
+      expect(undersized).toEqual([]);
     });
   }
 });

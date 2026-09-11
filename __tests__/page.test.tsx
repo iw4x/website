@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import Home from "@/app/[lang]/page";
@@ -12,9 +12,9 @@ describe("Home page", () => {
     expect(screen.getByRole("heading", { level: 1, name: SITE.name })).toBeInTheDocument();
   });
 
-  it("renders its heading inside the main landmark", () => {
+  it("leaves the main landmark to the layout", () => {
     render(<Home />);
 
-    expect(within(screen.getByRole("main")).getByRole("heading", { level: 1 })).toBeInTheDocument();
+    expect(screen.queryByRole("main")).not.toBeInTheDocument();
   });
 });

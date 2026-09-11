@@ -2,6 +2,9 @@
   "metadata": {
     "description": "A community-built client for Modern Warfare 2."
   },
+  "navigation": {
+    "skipToContent": "Skip to main content"
+  },
   "notFound": {
     "title": "Not found",
     "message": "That page does not exist.",
