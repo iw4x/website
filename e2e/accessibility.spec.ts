@@ -48,7 +48,6 @@ for (const colorScheme of COLOR_SCHEMES) {
 const PARAGRAPHS = `
   <p id="first">${"Modern Warfare 2 community client. ".repeat(12)}</p>
   <p id="second">${"Play with friends on dedicated servers. ".repeat(12)}</p>
-  <p><a id="inline-link" href="#first">Read more about the client</a></p>
 `;
 
 function parseRgb(color: string): [number, number, number] {
@@ -131,6 +130,18 @@ test.describe("visual presentation", () => {
     expect(width).toBeLessThanOrEqual(eightyCharacters + 1);
   });
 
+  test("spaces lines on the not-found page too", async ({ page }) => {
+    await page.goto(`/${LOCALES[0]}/this-page-does-not-exist`);
+
+    const { lineHeight, fontSize } = await page.locator("main p").evaluate((element) => {
+      const style = getComputedStyle(element);
+
+      return { lineHeight: parseFloat(style.lineHeight), fontSize: parseFloat(style.fontSize) };
+    });
+
+    expect(lineHeight).toBeGreaterThanOrEqual(fontSize * 1.5);
+  });
+
   test("never justifies text", async ({ page }) => {
     const alignments = await page.locator("main, main *").evaluateAll((elements) =>
       elements.map((element) => getComputedStyle(element).textAlign),
@@ -141,41 +152,37 @@ test.describe("visual presentation", () => {
 });
 
 test.describe("focus appearance", () => {
-  test("draws a solid indicator at least two pixels thick with 3:1 contrast", async ({ page, browserName }) => {
+  test.beforeEach(({ browserName }) => {
     test.skip(browserName === "webkit", "WebKit does not move focus to links with Tab by default");
+  });
 
-    await page.goto(`/${LOCALES[0]}`);
-    await injectParagraphs(page);
-
-    const link = page.locator("#inline-link");
-
-    for (let press = 0; press < 10; press++) {
+  for (const { name, path } of PAGES) {
+    test(`${name} draws a solid indicator at least two pixels thick with 3:1 contrast`, async ({ page }) => {
+      await page.goto(path);
       await page.keyboard.press("Tab");
 
-      if (await link.evaluate((element) => element === document.activeElement)) {
-        break;
-      }
-    }
+      const focused = page.locator(":focus");
 
-    await expect(link).toBeFocused();
+      await expect(focused).toHaveCount(1);
 
-    const { outlineStyle, outlineWidth, outlineColor, background } = await link.evaluate((element) => {
-      const style = getComputedStyle(element);
+      const { outlineStyle, outlineWidth, outlineColor, background } = await focused.evaluate((element) => {
+        const style = getComputedStyle(element);
 
-      return {
-        outlineStyle: style.outlineStyle,
-        outlineWidth: parseFloat(style.outlineWidth),
-        outlineColor: style.outlineColor,
-        background: getComputedStyle(document.body).backgroundColor,
-      };
+        return {
+          outlineStyle: style.outlineStyle,
+          outlineWidth: parseFloat(style.outlineWidth),
+          outlineColor: style.outlineColor,
+          background: getComputedStyle(document.body).backgroundColor,
+        };
+      });
+
+      const backgroundColor = background === "rgba(0, 0, 0, 0)" ? "rgb(255, 255, 255)" : background;
+
+      expect(outlineStyle).toBe("solid");
+      expect(outlineWidth).toBeGreaterThanOrEqual(2);
+      expect(contrastRatio(outlineColor, backgroundColor)).toBeGreaterThanOrEqual(3);
     });
-
-    const backgroundColor = background === "rgba(0, 0, 0, 0)" ? "rgb(255, 255, 255)" : background;
-
-    expect(outlineStyle).toBe("solid");
-    expect(outlineWidth).toBeGreaterThanOrEqual(2);
-    expect(contrastRatio(outlineColor, backgroundColor)).toBeGreaterThanOrEqual(3);
-  });
+  }
 });
 
 test.describe("motion", () => {

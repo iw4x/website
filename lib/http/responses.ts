@@ -4,6 +4,8 @@ import { SITE } from "../site-config";
 import { cacheControlFor } from "./cache-control";
 import type { RedirectRule } from "./redirects";
 
+export const BASE_STYLESHEET_PATH = "/styles/base.css";
+
 export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -23,6 +25,7 @@ function notFoundHtml(locale: Locale): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>${escapeHtml(title)} | ${escapeHtml(SITE.name)}</title>
+<link rel="stylesheet" href="${BASE_STYLESHEET_PATH}">
 </head>
 <body>
 <main>

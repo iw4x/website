@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { cacheControlFor } from "@/lib/http/cache-control";
-import { escapeHtml, localeRedirectResponse, notFoundResponse, redirectResponse } from "@/lib/http/responses";
+import { publicAssetPaths } from "@/lib/http/public-assets";
+import {
+  BASE_STYLESHEET_PATH,
+  escapeHtml,
+  localeRedirectResponse,
+  notFoundResponse,
+  redirectResponse,
+} from "@/lib/http/responses";
 import { DEFAULT_LOCALE, LOCALES, LOCALE_DETAILS } from "@/lib/i18n/config";
 import { ALL_DICTIONARIES } from "@/lib/i18n/dictionaries";
 import { SITE } from "@/lib/site-config";
@@ -45,6 +52,20 @@ describe("notFoundResponse", () => {
     expect(html).toContain(`<h1>${escapeHtml(title)}</h1>`);
     expect(html).toContain(escapeHtml(message));
     expect(html).toContain(escapeHtml(homeLink));
+  });
+
+  it("links the shared accessible base stylesheet", async () => {
+    const html = await notFoundResponse(DEFAULT_LOCALE).text();
+
+    expect(html).toContain(`<link rel="stylesheet" href="${BASE_STYLESHEET_PATH}">`);
+    expect(publicAssetPaths(process.cwd())).toContain(BASE_STYLESHEET_PATH);
+  });
+
+  it("carries no inline styles", async () => {
+    const html = await notFoundResponse(DEFAULT_LOCALE).text();
+
+    expect(html).not.toContain("<style");
+    expect(html).not.toContain(" style=");
   });
 
   it.each(LOCALES)("links home within the %s locale", async (locale) => {
