@@ -30,6 +30,7 @@ Requires Node.js 22.12 or newer (see `.nvmrc`).
 | `npm run test:e2e`      | Build and run end-to-end tests (Playwright).             |
 | `npm run test:e2e:ui`   | Open Playwright UI for debugging end-to-end tests.       |
 | `npm run typecheck`     | Type-check the project, test files included.             |
+| `npm run lighthouse`    | Fail unless every Lighthouse category scores 100 against a running production server (`npm run build && npm start` first). |
 
 ## Learn More
 
