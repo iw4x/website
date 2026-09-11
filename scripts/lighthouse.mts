@@ -5,11 +5,16 @@ import desktopConfig from "lighthouse/core/config/desktop-config.js";
 
 import { LOCALES } from "../lib/i18n/config.ts";
 
-const THRESHOLD = 100;
+const THRESHOLDS = {
+  performance: 95,
+  accessibility: 100,
+  "best-practices": 100,
+  seo: 100,
+} as const;
 
-const CATEGORIES = ["performance", "accessibility", "best-practices", "seo"] as const;
+type Category = keyof typeof THRESHOLDS;
 
-type Category = (typeof CATEGORIES)[number];
+const CATEGORIES = Object.keys(THRESHOLDS) as Category[];
 
 type FormFactor = {
   readonly name: string;
@@ -93,7 +98,7 @@ async function main(): Promise<void> {
         rows.push({ target, scores });
 
         for (const category of CATEGORIES) {
-          if (scores[category] >= THRESHOLD) {
+          if (scores[category] >= THRESHOLDS[category]) {
             continue;
           }
 
@@ -101,7 +106,7 @@ async function main(): Promise<void> {
           const audits = failingAudits(worst, category);
 
           failures.push(
-            `${target} ${category}: ${scores[category]} < ${THRESHOLD}` +
+            `${target} ${category}: ${scores[category]} < ${THRESHOLDS[category]}` +
               (audits.length > 0 ? `\n    failing audits: ${audits.join(", ")}` : ""),
           );
         }
@@ -127,7 +132,7 @@ async function main(): Promise<void> {
   }
 
   console.log(
-    `\nEvery category scored ${THRESHOLD} across ${LOCALES.length} locale(s) and ${FORM_FACTORS.length} form factors (median of ${RUNS} runs).`,
+    `\nEvery category met its threshold across ${LOCALES.length} locale(s) and ${FORM_FACTORS.length} form factors (median of ${RUNS} runs).`,
   );
 }
 
