@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { cacheControlFor } from "@/lib/http/cache-control";
-import { escapeHtml, notFoundResponse, redirectResponse } from "@/lib/http/responses";
+import { escapeHtml, localeRedirectResponse, notFoundResponse, redirectResponse } from "@/lib/http/responses";
 import { SITE } from "@/lib/site-config";
 
 describe("escapeHtml", () => {
@@ -67,5 +67,26 @@ describe("redirectResponse", () => {
 
   it("has no body", () => {
     expect(redirectResponse({ from: "/a", to: "/b", permanent: true }).body).toBeNull();
+  });
+});
+
+describe("localeRedirectResponse", () => {
+  it("redirects temporarily to the given location", () => {
+    const response = localeRedirectResponse("https://iw4x.io/en");
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("Location")).toBe("https://iw4x.io/en");
+  });
+
+  it("varies by Accept-Language", () => {
+    expect(localeRedirectResponse("/en").headers.get("Vary")).toBe("Accept-Language");
+  });
+
+  it("carries the short locale redirect cache policy", () => {
+    expect(localeRedirectResponse("/en").headers.get("Cache-Control")).toBe(cacheControlFor("localeRedirect"));
+  });
+
+  it("has no body", () => {
+    expect(localeRedirectResponse("/en").body).toBeNull();
   });
 });

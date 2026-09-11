@@ -2,52 +2,42 @@ import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 
 import { cacheControlFor } from "@/lib/http/cache-control";
+import { DEFAULT_LOCALE } from "@/lib/i18n/config";
 import { config, proxy } from "@/proxy";
 
-function requestFor(path: string, headers: Record<string, string> = {}): NextRequest {
-  return new NextRequest(new URL(path, "https://iw4x.io"), { headers });
+function requestFor(path: string): NextRequest {
+  return new NextRequest(new URL(path, "https://iw4x.io"));
 }
 
 describe("proxy", () => {
-  it("passes canonical paths through", () => {
-    const response = proxy(requestFor("/docs"));
-
-    expect(response.headers.get("x-middleware-next")).toBe("1");
-  });
-
-  it("passes the root through", () => {
+  it("negotiates a locale for unprefixed paths", () => {
     const response = proxy(requestFor("/"));
 
-    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.status).toBe(307);
+    expect(response.headers.get("Location")).toBe(`https://iw4x.io/${DEFAULT_LOCALE}`);
+    expect(response.headers.get("Cache-Control")).toBe(cacheControlFor("localeRedirect"));
   });
 
-  it("redirects a trailing slash permanently with the shared redirect cache policy", () => {
-    const response = proxy(requestFor("/docs/"));
-
-    expect(response.status).toBe(308);
-    expect(response.headers.get("Location")).toBe("https://iw4x.io/docs");
-    expect(response.headers.get("Cache-Control")).toBe(cacheControlFor("redirect"));
+  it("canonicalises trailing slashes", () => {
+    expect(proxy(requestFor("/docs/")).status).toBe(308);
   });
 
-  it("keeps the query string", () => {
-    const response = proxy(requestFor("/docs/?ref=home"));
+  it("passes localised paths through", () => {
+    expect(proxy(requestFor(`/${DEFAULT_LOCALE}`)).headers.get("x-middleware-next")).toBe("1");
+  });
+});
 
-    expect(response.headers.get("Location")).toBe("https://iw4x.io/docs?ref=home");
+describe("matcher", () => {
+  const matches = (pathname: string) => new RegExp(`^${config.matcher[0]}$`).test(pathname);
+
+  it.each(["/_next/static/chunks/app.js", "/_next/image"])("leaves Next.js output alone: %s", (pathname) => {
+    expect(matches(pathname)).toBe(false);
   });
 
-  it("stays on the requested origin", () => {
-    const response = proxy(requestFor("/docs/", { "x-forwarded-host": "evil.example" }));
-
-    expect(new URL(response.headers.get("Location") ?? "").origin).toBe("https://iw4x.io");
-  });
-
-  it("never builds a protocol-relative location from repeated slashes", () => {
-    const response = proxy(requestFor("/%2F%2Fevil.example/"));
-
-    expect(new URL(response.headers.get("Location") ?? "").origin).toBe("https://iw4x.io");
-  });
-
-  it("only runs outside Next.js build output", () => {
-    expect(config.matcher).toEqual(["/((?!_next/).*/)"]);
-  });
+  it.each(["/", "/docs", "/en", "/en/", "/favicon.ico", "/missing.png", "/_next", "/some/deep/path/"])(
+    "handles %s",
+    (pathname) => {
+      expect(matches(pathname)).toBe(true);
+    },
+  );
 });

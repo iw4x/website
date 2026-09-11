@@ -87,4 +87,12 @@ describe("cache policies", () => {
     expect(CACHE_POLICIES.notFound.sMaxAge).toBeLessThanOrEqual(600);
     expect(CACHE_POLICIES.redirect.sMaxAge).toBeLessThanOrEqual(600);
   });
+
+  it("keeps the header-varying locale redirect shortest of all", () => {
+    const others = Object.entries(CACHE_POLICIES).filter(([name]) => name !== "localeRedirect");
+
+    for (const [, policy] of others) {
+      expect(CACHE_POLICIES.localeRedirect.sMaxAge).toBeLessThanOrEqual(policy.sMaxAge);
+    }
+  });
 });

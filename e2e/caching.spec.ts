@@ -39,14 +39,14 @@ function expectSharedCacheable(value: string | undefined): Directives {
 
 test.describe("cache policy", () => {
   test("the homepage is held by shared caches", async ({ request }) => {
-    const response = await request.get("/");
+    const response = await request.get("/en");
 
     expect(response.status()).toBe(200);
     expectSharedCacheable(response.headers()["cache-control"]);
   });
 
   test("404s are cacheable", async ({ request }) => {
-    const response = await request.get("/this-path-does-not-exist", { maxRedirects: 0 });
+    const response = await request.get("/en/this-path-does-not-exist", { maxRedirects: 0 });
 
     expect(response.status()).toBe(404);
 
@@ -56,7 +56,7 @@ test.describe("cache policy", () => {
   });
 
   test("deeply nested 404s are cacheable", async ({ request }) => {
-    const response = await request.get("/a/b/c/d/e", { maxRedirects: 0 });
+    const response = await request.get("/en/a/b/c/d/e", { maxRedirects: 0 });
 
     expect(response.status()).toBe(404);
     expectSharedCacheable(response.headers()["cache-control"]);
@@ -70,14 +70,14 @@ test.describe("cache policy", () => {
   });
 
   test("404s for other methods are cacheable", async ({ request }) => {
-    const response = await request.post("/this-path-does-not-exist", { maxRedirects: 0 });
+    const response = await request.post("/en/this-path-does-not-exist", { maxRedirects: 0 });
 
     expect(response.status()).toBe(404);
     expectSharedCacheable(response.headers()["cache-control"]);
   });
 
   test("missing public assets keep the short 404 lifetime", async ({ request }) => {
-    const response = await request.get("/missing.png", { maxRedirects: 0 });
+    const response = await request.get("/missing.png");
 
     expect(response.status()).toBe(404);
 
@@ -86,14 +86,26 @@ test.describe("cache policy", () => {
     expect(sharedLifetime(directives)).toBeLessThanOrEqual(600);
   });
 
+  test("unprefixed probes for missing files are cacheable at every hop", async ({ request }) => {
+    const redirect = await request.get("/wp-login.php", { maxRedirects: 0 });
+
+    expect(redirect.status()).toBe(307);
+    expectSharedCacheable(redirect.headers()["cache-control"]);
+
+    const response = await request.get("/wp-login.php");
+
+    expect(response.status()).toBe(404);
+    expectSharedCacheable(response.headers()["cache-control"]);
+  });
+
   test("404s are not indexable", async ({ request }) => {
-    const response = await request.get("/this-path-does-not-exist");
+    const response = await request.get("/en/this-path-does-not-exist");
 
     expect(response.headers()["x-robots-tag"]).toContain("noindex");
   });
 
   test("redirects are cacheable", async ({ request }) => {
-    const response = await request.get("/docs", { maxRedirects: 0 });
+    const response = await request.get("/en/docs", { maxRedirects: 0 });
 
     expect([307, 308]).toContain(response.status());
     expect(response.headers().location).toBe("https://docs.iw4x.io/");
@@ -132,7 +144,7 @@ test.describe("cache policy", () => {
   }
 
   test("content-hashed build output is immutable", async ({ request }) => {
-    const html = await (await request.get("/")).text();
+    const html = await (await request.get("/en")).text();
     const assetPath = html.match(/\/_next\/static\/[^"']+\.js/)?.[0];
 
     expect(assetPath, "no hashed asset found on the homepage").toBeTruthy();
@@ -145,7 +157,7 @@ test.describe("cache policy", () => {
   });
 
   test("no response advertises the framework", async ({ request }) => {
-    for (const path of ["/", "/this-path-does-not-exist", "/favicon.ico"]) {
+    for (const path of ["/", "/en", "/en/this-path-does-not-exist", "/favicon.ico"]) {
       const response = await request.get(path, { maxRedirects: 0 });
 
       expect(response.headers()["x-powered-by"], path).toBeUndefined();

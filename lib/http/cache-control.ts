@@ -50,6 +50,11 @@ export const CACHE_POLICIES = {
     staleWhileRevalidate: 300,
     staleIfError: 3600,
   },
+  localeRedirect: {
+    sMaxAge: 60,
+    staleWhileRevalidate: 60,
+    staleIfError: 600,
+  },
 } as const satisfies Record<string, CachePolicy>;
 
 export type CachePolicyName = keyof typeof CACHE_POLICIES;

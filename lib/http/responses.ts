@@ -58,3 +58,14 @@ export function redirectResponse(rule: RedirectRule): Response {
     },
   });
 }
+
+export function localeRedirectResponse(location: string): Response {
+  return new Response(null, {
+    status: 307,
+    headers: {
+      Location: location,
+      "Cache-Control": cacheControlFor("localeRedirect"),
+      Vary: "Accept-Language",
+    },
+  });
+}

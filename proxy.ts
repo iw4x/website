@@ -1,21 +1,13 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
-import { redirectResponse } from "@/lib/http/responses";
-import { canonicalPathname } from "@/lib/http/trailing-slash";
+import { routeRequest } from "@/lib/http/route-request";
+
+const PUBLIC_ASSETS: ReadonlySet<string> = new Set(JSON.parse(process.env.PUBLIC_ASSET_PATHS ?? "[]") as string[]);
 
 export function proxy(request: NextRequest): Response {
-  const { origin, pathname, search } = request.nextUrl;
-  const canonical = canonicalPathname(pathname);
-
-  if (canonical === undefined) {
-    return NextResponse.next();
-  }
-
-  const target = new URL(`${canonical}${search}`, origin);
-
-  return redirectResponse({ from: pathname, to: target.href, permanent: true });
+  return routeRequest(request, PUBLIC_ASSETS);
 }
 
 export const config = {
-  matcher: ["/((?!_next/).*/)"],
+  matcher: ["/((?!_next/).*)"],
 };
