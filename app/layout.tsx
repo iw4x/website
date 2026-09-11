@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+
+import { SITE } from "@/lib/site-config";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "IW4x",
+  title: SITE.name,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
