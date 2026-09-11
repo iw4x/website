@@ -110,6 +110,27 @@ test.describe("cache policy", () => {
     expect(sharedLifetime(directives)).toBeGreaterThanOrEqual(3600);
   });
 
+  test("trailing-slash redirects are cacheable", async ({ request }) => {
+    const response = await request.get("/this-path-does-not-exist/", { maxRedirects: 0 });
+
+    expect(response.status()).toBe(308);
+    expect(response.headers().location).toBe("/this-path-does-not-exist");
+    expectSharedCacheable(response.headers()["cache-control"]);
+  });
+
+  for (const path of ["//evil.example/", "/%2F%2Fevil.example/", "/%5C%5Cevil.example/"]) {
+    test(`redirects for ${path} never leave the site`, async ({ request, baseURL }) => {
+      const response = await request.get(`${baseURL}${path}`, { maxRedirects: 0 });
+      const location = response.headers().location ?? "";
+
+      expect(response.status()).toBe(308);
+      expect(location.startsWith("/")).toBe(true);
+      expect(location.startsWith("//")).toBe(false);
+      expect(location.startsWith("/\\")).toBe(false);
+      expect(location).not.toContain("://");
+    });
+  }
+
   test("content-hashed build output is immutable", async ({ request }) => {
     const html = await (await request.get("/")).text();
     const assetPath = html.match(/\/_next\/static\/[^"']+\.js/)?.[0];
