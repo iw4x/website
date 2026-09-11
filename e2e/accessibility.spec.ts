@@ -282,3 +282,76 @@ test.describe("target size", () => {
     });
   }
 });
+
+const TEXT_SPACING = `
+  * {
+    line-height: 1.5 !important;
+    letter-spacing: 0.12em !important;
+    word-spacing: 0.16em !important;
+  }
+
+  p {
+    margin-block-end: 2em !important;
+  }
+`;
+
+async function horizontalOverflow(page: Page): Promise<number> {
+  return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+}
+
+async function clippedElements(page: Page): Promise<string[]> {
+  return page.locator("body *").evaluateAll((elements) =>
+    elements
+      .filter((element) => {
+        const style = getComputedStyle(element);
+        const clips = ["hidden", "clip"].includes(style.overflowX) || ["hidden", "clip"].includes(style.overflowY);
+        const rect = element.getBoundingClientRect();
+        const visuallyHidden = rect.width <= 1 && rect.height <= 1;
+
+        return (
+          clips &&
+          !visuallyHidden &&
+          (element.scrollWidth > element.clientWidth || element.scrollHeight > element.clientHeight)
+        );
+      })
+      .map((element) => element.outerHTML.slice(0, 120)),
+  );
+}
+
+test.describe("reflow", () => {
+  test.use({ viewport: { width: 320, height: 256 } });
+
+  for (const { name, path } of PAGES) {
+    test(`${name} needs no horizontal scrolling at 320 CSS pixels`, async ({ page }) => {
+      await page.goto(path);
+
+      expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+    });
+  }
+});
+
+test.describe("text spacing", () => {
+  for (const { name, path } of PAGES) {
+    test(`${name} keeps all content when users increase text spacing`, async ({ page }) => {
+      await page.goto(path);
+      await page.addStyleTag({ content: TEXT_SPACING });
+
+      expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+      expect(await clippedElements(page)).toEqual([]);
+    });
+  }
+});
+
+test.describe("resize text", () => {
+  test.use({ viewport: { width: 1280, height: 720 } });
+
+  for (const { name, path } of PAGES) {
+    test(`${name} reads without horizontal scrolling at 200% text size`, async ({ page }) => {
+      await page.goto(path);
+      await page.addStyleTag({ content: "html { font-size: 200% !important; }" });
+
+      expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+      expect(await clippedElements(page)).toEqual([]);
+    });
+  }
+});
