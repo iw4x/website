@@ -1,1 +1,39 @@
 @import "tailwindcss";
+
+@layer base {
+  html {
+    line-height: 1.5;
+  }
+
+  :where(p, li, dt, dd, blockquote, figcaption) {
+    max-inline-size: 80ch;
+  }
+
+  :where(p, li, dt, dd, blockquote, figcaption):where(:lang(zh), :lang(ja), :lang(ko)) {
+    max-inline-size: 40ic;
+  }
+
+  :where(p) + :where(p) {
+    margin-block-start: 1.5lh;
+  }
+
+  :focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: 3px;
+  }
+
+  [tabindex="-1"]:focus-visible {
+    outline: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
