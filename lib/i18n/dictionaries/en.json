@@ -1,0 +1,10 @@
+{
+  "metadata": {
+    "description": "A community-built client for Modern Warfare 2."
+  },
+  "notFound": {
+    "title": "Not found",
+    "message": "That page does not exist.",
+    "homeLink": "Go to the homepage"
+  }
+}
