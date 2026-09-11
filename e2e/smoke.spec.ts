@@ -12,7 +12,7 @@ test.describe("smoke", () => {
 
     expect(response?.status()).toBe(200);
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
-    await expect(page).toHaveTitle(/\S/);
+    await expect(page).toHaveTitle("IW4x");
     await expect(page.getByRole("main")).toBeAttached();
     expect(errors).toEqual([]);
   });
