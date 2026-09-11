@@ -3,9 +3,15 @@ import { expect, test } from "@playwright/test";
 test.describe("smoke", () => {
   test("home page renders without client-side errors", async ({ page }) => {
     const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
+
+    page.on("pageerror", (error) => {
+      errors.push(error.message);
+    });
+
     page.on("console", (message) => {
-      if (message.type() === "error") errors.push(message.text());
+      if (message.type() === "error") {
+        errors.push(message.text());
+      }
     });
 
     const response = await page.goto("/");
@@ -13,7 +19,7 @@ test.describe("smoke", () => {
     expect(response?.status()).toBe(200);
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page).toHaveTitle("IW4x");
-    await expect(page.getByRole("main")).toBeAttached();
+    await expect(page.getByRole("main").getByRole("heading", { level: 1, name: "IW4x" })).toBeVisible();
     expect(errors).toEqual([]);
   });
 
