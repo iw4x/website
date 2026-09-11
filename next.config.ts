@@ -4,6 +4,7 @@ import { cacheControlFor } from "./lib/http/cache-control";
 import { publicAssetPaths } from "./lib/http/public-assets";
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   skipTrailingSlashRedirect: true,
   async headers() {
     return publicAssetPaths(process.cwd()).map((source) => ({

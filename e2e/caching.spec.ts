@@ -143,4 +143,12 @@ test.describe("cache policy", () => {
     expect(directives.has("immutable")).toBe(true);
     expect(sharedLifetime(directives)).toBeGreaterThan(31_000_000);
   });
+
+  test("no response advertises the framework", async ({ request }) => {
+    for (const path of ["/", "/this-path-does-not-exist", "/favicon.ico"]) {
+      const response = await request.get(path, { maxRedirects: 0 });
+
+      expect(response.headers()["x-powered-by"], path).toBeUndefined();
+    }
+  });
 });
