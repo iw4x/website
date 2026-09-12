@@ -14,7 +14,7 @@ describe("Wordmark", () => {
   it("accents only the final letter", () => {
     const { container } = render(<Wordmark />);
 
-    const accented = container.querySelectorAll(".text-accent-text");
+    const accented = container.querySelectorAll(".text-wordmark-accent");
 
     expect(accented).toHaveLength(1);
     expect(accented[0]).toHaveTextContent(SITE.name.slice(-1));

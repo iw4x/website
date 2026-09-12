@@ -32,6 +32,7 @@ const TEXT_PAIRS = [
   ["--muted-foreground", "--background"],
   ["--foreground", "--surface"],
   ["--accent-text", "--background"],
+  ["--wordmark-accent", "--background"],
   ["--accent-ink", "--accent"],
   ["--accent-ink", "--accent-hover"],
   ["--accent-ink", "--accent-active"],

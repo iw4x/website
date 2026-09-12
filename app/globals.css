@@ -17,6 +17,7 @@
   --color-accent-ink: var(--accent-ink);
   --color-accent-edge: var(--accent-edge);
   --color-accent-text: var(--accent-text);
+  --color-wordmark-accent: var(--wordmark-accent);
 
   --tracking-body: var(--tracking-body);
   --tracking-heading: var(--tracking-heading);

@@ -6,7 +6,7 @@ export function Wordmark() {
   return (
     <h1 className="text-display font-bold tracking-display text-foreground">
       {LEAD}
-      <span className="text-accent-text">{TAIL}</span>
+      <span className="text-wordmark-accent">{TAIL}</span>
     </h1>
   );
 }
