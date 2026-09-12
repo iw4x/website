@@ -1,16 +1,32 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import { notFound } from "next/navigation";
 
 import { MAIN_CONTENT_ID, SkipLink } from "@/components/skip-link";
-import { LOCALES, LOCALE_DETAILS, isLocale } from "@/lib/i18n/config";
+import { LOCALES, isLocale, localeTag } from "@/lib/i18n/config";
 import { getDictionaryFor } from "@/lib/i18n/dictionaries";
 import { localeMetadata } from "@/lib/i18n/metadata";
 
 import "../globals.css";
 
+const inter = Inter({
+  subsets: ["latin"],
+  axes: ["opsz"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
 export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
 }
+
+export const viewport: Viewport = {
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafaf9" },
+    { media: "(prefers-color-scheme: dark)", color: "#121212" },
+  ],
+};
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -32,7 +48,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
   const dictionary = getDictionaryFor(lang);
 
   return (
-    <html lang={LOCALE_DETAILS[lang].tag}>
+    <html lang={localeTag(lang)} className={inter.variable}>
       <body>
         <SkipLink label={dictionary.navigation.skipToContent} />
         <main id={MAIN_CONTENT_ID} tabIndex={-1}>
