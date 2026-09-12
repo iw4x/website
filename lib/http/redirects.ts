@@ -1,3 +1,5 @@
+import { LINKS } from "../site-config";
+
 export type RedirectRule = {
   readonly from: string;
   readonly to: string;
@@ -5,7 +7,7 @@ export type RedirectRule = {
 };
 
 export const REDIRECTS: readonly RedirectRule[] = [
-  { from: "/docs", to: "https://docs.iw4x.io/", permanent: false },
+  { from: "/docs", to: LINKS.docs, permanent: false },
 ];
 
 export function normalizePathname(pathname: string): string {
