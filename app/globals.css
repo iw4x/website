@@ -1,2 +1,29 @@
 @import "tailwindcss";
 @import "../public/styles/base.css";
+
+@theme inline {
+  --font-sans: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-rule: var(--rule);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-edge: var(--accent-edge);
+  --color-accent-text: var(--accent-text);
+
+  --tracking-body: var(--tracking-body);
+  --tracking-heading: var(--tracking-heading);
+  --tracking-display: var(--tracking-display);
+
+  --text-display: var(--text-display);
+  --text-display--line-height: 1;
+  --text-heading: var(--text-heading);
+  --text-heading--line-height: 1.15;
+}

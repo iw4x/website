@@ -1,27 +1,115 @@
+:root {
+  color-scheme: light dark;
+
+  --background: #fafaf9;
+  --surface: #ebe9e7;
+  --foreground: #1c1917;
+  --muted-foreground: #4c4844;
+
+  --border: #78716c;
+  --rule: #d6d3d1;
+
+  --accent: #a3e635;
+  --accent-hover: #74b00e;
+  --accent-active: #74b00e;
+  --accent-ink: #121212;
+  --accent-edge: #365314;
+  --accent-text: #365314;
+
+  --focus-ring: #1c1917;
+
+  /*
+   * Inter dynamic metrics: tracking = -0.0223 + 0.185 * e^(-0.1745 * sizeInPx).
+   * See lib/typography/inter-metrics.ts, which is unit-tested against these
+   * values. Latin only - CJK is set solid below.
+   */
+  --tracking-body: -0.011em;
+  --tracking-heading: -0.0216em;
+  --tracking-display: -0.0223em;
+
+  --text-display: clamp(2.5rem, 1.1667rem + 6.6667vw, 6.5rem);
+  --text-heading: 2rem;
+
+  --font-sans:
+    var(--font-inter, ui-sans-serif), system-ui, -apple-system, "Segoe UI", "Noto Sans", "Noto Sans SC",
+    "Noto Sans JP", "Noto Sans KR", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #121212;
+    --surface: #262626;
+    --foreground: #fafaf9;
+    --muted-foreground: #b8b2ae;
+
+    --rule: #2f2f2f;
+
+    --accent-edge: #a3e635;
+    --accent-text: #a3e635;
+
+    --focus-ring: #fafaf9;
+  }
+}
+
 @layer base {
   html {
     line-height: 1.5;
+    font-family: var(--font-sans);
+    background-color: var(--background);
+    color: var(--foreground);
+    text-size-adjust: 100%;
   }
 
   :where(p, li, dt, dd, blockquote, figcaption) {
-    max-inline-size: 80ch;
-  }
-
-  :where(p, li, dt, dd, blockquote, figcaption):where(:lang(zh), :lang(ja), :lang(ko)) {
-    max-inline-size: 40ic;
+    max-inline-size: 62ch;
   }
 
   :where(p) + :where(p) {
     margin-block-start: 1.5lh;
   }
 
+  :where(p) {
+    text-wrap: pretty;
+  }
+
+  :where(h1, h2, h3, h4, h5, h6) {
+    text-wrap: balance;
+  }
+
+  :where(:lang(zh), :lang(ja), :lang(ko)) {
+    line-height: 1.7;
+    letter-spacing: normal;
+    text-autospace: normal;
+    text-spacing-trim: space-first;
+    line-break: strict;
+    hanging-punctuation: allow-end;
+  }
+
+  :where(p, li, dt, dd, blockquote, figcaption):where(:lang(zh), :lang(ja), :lang(ko)) {
+    max-inline-size: 40ic;
+  }
+
+  :where(li:has(:is(div, p, section, article, ul, ol, dl, h1, h2, h3, h4, h5, h6))) {
+    max-inline-size: none;
+  }
+
+  :where(:lang(ja)) {
+    word-break: auto-phrase;
+  }
+
   :focus-visible {
-    outline: 3px solid currentColor;
+    outline: 3px solid var(--focus-ring, currentColor);
     outline-offset: 3px;
   }
 
   [tabindex="-1"]:focus-visible {
     outline: none;
+  }
+
+  @media (forced-colors: active) {
+    :focus-visible {
+      outline-color: Highlight;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
