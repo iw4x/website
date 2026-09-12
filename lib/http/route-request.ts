@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { splitLocale } from "../i18n/config";
 import { negotiateLocale } from "../i18n/negotiate";
+import { isMetadataRoute } from "./metadata-routes";
 import { localeRedirectResponse, redirectResponse } from "./responses";
 import { canonicalPathname } from "./trailing-slash";
 
@@ -15,7 +16,7 @@ export function routeRequest(request: NextRequest, publicAssets: ReadonlySet<str
     return redirectResponse({ from: pathname, to: target.href, permanent: true });
   }
 
-  if (publicAssets.has(pathname) || splitLocale(pathname).locale !== null) {
+  if (publicAssets.has(pathname) || isMetadataRoute(pathname) || splitLocale(pathname).locale !== null) {
     return NextResponse.next();
   }
 
