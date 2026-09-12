@@ -4,7 +4,7 @@ export const SITE = {
 } as const;
 
 export const LINKS = {
-  download: "https://github.com/iw4x/launcher/releases/latest",
+  download: "https://docs.iw4x.io/get-started/quickstart/",
   docs: "https://docs.iw4x.io/",
   discord: "https://discord.com/invite/pV2qJscTXf",
   github: "https://github.com/iw4x",
