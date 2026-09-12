@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_LOCALE, LOCALES } from "@/lib/i18n/config";
 import { ALL_DICTIONARIES, getDictionaryFor } from "@/lib/i18n/dictionaries";
+import { fill } from "@/lib/i18n/format";
 
 function strings(value: unknown, path = ""): [string, string][] {
   if (typeof value === "string") {
@@ -18,6 +19,15 @@ function strings(value: unknown, path = ""): [string, string][] {
 const REFERENCE_KEYS = strings(ALL_DICTIONARIES[DEFAULT_LOCALE])
   .map(([path]) => path)
   .sort();
+
+const PLACEHOLDER = /\{(\w+)\}/g;
+
+const REFERENCE_PLACEHOLDERS = new Map(
+  strings(ALL_DICTIONARIES[DEFAULT_LOCALE]).map(([path, text]) => [
+    path,
+    [...text.matchAll(PLACEHOLDER)].map(([, name]) => name).sort(),
+  ]),
+);
 
 describe("dictionaries", () => {
   it.each(LOCALES)("provides a dictionary for %s", (locale) => {
@@ -44,9 +54,25 @@ describe("dictionaries", () => {
     }
   });
 
-  it.each(LOCALES)("%s introduces no interpolation placeholders", (locale) => {
+  it.each(LOCALES)("%s only uses placeholders the default locale already declares", (locale) => {
     for (const [path, text] of strings(ALL_DICTIONARIES[locale])) {
-      expect(text, `${locale}: ${path}`).not.toMatch(/\{[^}]*\}/);
+      expect([...text.matchAll(PLACEHOLDER)].map(([, name]) => name).sort(), `${locale}: ${path}`).toEqual(
+        REFERENCE_PLACEHOLDERS.get(path) ?? [],
+      );
+    }
+  });
+
+  it.each(LOCALES)("%s writes every placeholder in a form fill() can substitute", (locale) => {
+    for (const [path, text] of strings(ALL_DICTIONARIES[locale])) {
+      for (const [, name] of text.matchAll(PLACEHOLDER)) {
+        expect(fill(text, { [name]: "" }), `${locale}: ${path}`).not.toContain(`{${name}}`);
+      }
+    }
+  });
+
+  it.each(LOCALES)("%s leaves no half-written placeholder behind", (locale) => {
+    for (const [path, text] of strings(ALL_DICTIONARIES[locale])) {
+      expect(text.replace(PLACEHOLDER, ""), `${locale}: ${path}`).not.toMatch(/[{}]/);
     }
   });
 

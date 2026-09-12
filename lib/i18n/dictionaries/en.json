@@ -5,6 +5,25 @@
   "navigation": {
     "skipToContent": "Skip to main content"
   },
+  "home": {
+    "download": "Download",
+    "docs": "Documentation"
+  },
+  "social": {
+    "label": "Community",
+    "discord": "IW4x on Discord",
+    "github": "IW4x on GitHub"
+  },
+  "releases": {
+    "toggle": "View release archive",
+    "heading": "Releases",
+    "subtitle": "Recent IW4x client builds.",
+    "all": "All releases",
+    "changelog": "Changelog",
+    "changelogLabel": "Changelog for {version}",
+    "download": "Download",
+    "downloadLabel": "Download {version}"
+  },
   "notFound": {
     "title": "Not found",
     "message": "That page does not exist.",
