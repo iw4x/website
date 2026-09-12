@@ -13,6 +13,10 @@ export const LOCALE_DETAILS: Readonly<Record<Locale, LocaleDetails>> = {
   en: { tag: "en", name: "English" },
 };
 
+export function localeTag(locale: Locale): string {
+  return LOCALE_DETAILS[locale].tag;
+}
+
 export function isLocale(value: string): value is Locale {
   return (LOCALES as readonly string[]).includes(value);
 }

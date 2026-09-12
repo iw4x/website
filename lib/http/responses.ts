@@ -1,4 +1,4 @@
-import { LOCALE_DETAILS, type Locale } from "../i18n/config";
+import { type Locale, localeTag } from "../i18n/config";
 import { getDictionaryFor } from "../i18n/dictionaries";
 import { SITE } from "../site-config";
 import { cacheControlFor } from "./cache-control";
@@ -19,7 +19,7 @@ function notFoundHtml(locale: Locale): string {
   const { title, message, homeLink } = getDictionaryFor(locale).notFound;
 
   return `<!doctype html>
-<html lang="${LOCALE_DETAILS[locale].tag}">
+<html lang="${localeTag(locale)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

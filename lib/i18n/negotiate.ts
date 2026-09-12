@@ -1,7 +1,7 @@
 import { match } from "@formatjs/intl-localematcher";
 import Negotiator from "negotiator";
 
-import { DEFAULT_LOCALE, LOCALES, LOCALE_DETAILS, type Locale } from "./config";
+import { DEFAULT_LOCALE, LOCALES, type Locale, localeTag } from "./config";
 
 export function negotiateTag(acceptLanguage: string | null, tags: readonly string[], fallback: string): string {
   if (!acceptLanguage) {
@@ -29,10 +29,10 @@ export function negotiateTag(acceptLanguage: string | null, tags: readonly strin
   }
 }
 
-const LOCALE_BY_TAG = new Map<string, Locale>(LOCALES.map((locale) => [LOCALE_DETAILS[locale].tag, locale]));
+const LOCALE_BY_TAG = new Map<string, Locale>(LOCALES.map((locale) => [localeTag(locale), locale]));
 
 export function negotiateLocale(acceptLanguage: string | null): Locale {
-  const tag = negotiateTag(acceptLanguage, [...LOCALE_BY_TAG.keys()], LOCALE_DETAILS[DEFAULT_LOCALE].tag);
+  const tag = negotiateTag(acceptLanguage, [...LOCALE_BY_TAG.keys()], localeTag(DEFAULT_LOCALE));
 
   return LOCALE_BY_TAG.get(tag) ?? DEFAULT_LOCALE;
 }

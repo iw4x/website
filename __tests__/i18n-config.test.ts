@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_LOCALE, LOCALES, LOCALE_DETAILS, isLocale, splitLocale } from "@/lib/i18n/config";
+import { DEFAULT_LOCALE, LOCALES, LOCALE_DETAILS, isLocale, localeTag, splitLocale } from "@/lib/i18n/config";
 
 describe("locale configuration", () => {
   it("includes the default locale in the supported set", () => {
@@ -62,5 +62,22 @@ describe("splitLocale", () => {
 
   it("does not mistake a segment that merely starts with a locale", () => {
     expect(splitLocale("/english").locale).toBeNull();
+  });
+});
+
+describe("localeTag", () => {
+  it.each(LOCALES)("returns the BCP 47 tag declared for %s", (locale) => {
+    expect(localeTag(locale)).toBe(LOCALE_DETAILS[locale].tag);
+  });
+
+  it.each(LOCALES)("%s resolves to a well-formed tag", (locale) => {
+    expect(localeTag(locale)).toMatch(/^[a-z]{2,3}(-[A-Za-z0-9]+)*$/);
+    expect(new Intl.Locale(localeTag(locale)).language.length).toBeGreaterThan(0);
+  });
+
+  it("gives every locale a distinct tag", () => {
+    const tags = LOCALES.map(localeTag);
+
+    expect(new Set(tags).size).toBe(tags.length);
   });
 });
