@@ -1,22 +1,31 @@
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 import type { NextConfig } from "next";
 
 import { cacheControlFor } from "./lib/http/cache-control";
+import { METADATA_ROUTES } from "./lib/http/metadata-routes";
 import { publicAssetPaths } from "./lib/http/public-assets";
+import { securityHeaders } from "./lib/http/security-headers";
 
 const PUBLIC_ASSET_PATHS = publicAssetPaths(process.cwd());
 
-const nextConfig: NextConfig = {
-  poweredByHeader: false,
-  skipTrailingSlashRedirect: true,
-  env: {
-    PUBLIC_ASSET_PATHS: JSON.stringify(PUBLIC_ASSET_PATHS),
-  },
-  async headers() {
-    return PUBLIC_ASSET_PATHS.map((source) => ({
-      source,
-      headers: [{ key: "Cache-Control", value: cacheControlFor("publicAsset") }],
-    }));
-  },
-};
+export default function config(phase: string): NextConfig {
+  const development = phase === PHASE_DEVELOPMENT_SERVER;
 
-export default nextConfig;
+  return {
+    poweredByHeader: false,
+    allowedDevOrigins: ["127.0.0.1"],
+    skipTrailingSlashRedirect: true,
+    env: {
+      PUBLIC_ASSET_PATHS: JSON.stringify(PUBLIC_ASSET_PATHS),
+    },
+    async headers() {
+      return [
+        { source: "/:path*", headers: [...securityHeaders({ development })] },
+        ...[...PUBLIC_ASSET_PATHS, ...METADATA_ROUTES].map((source) => ({
+          source,
+          headers: [{ key: "Cache-Control", value: cacheControlFor("publicAsset") }],
+        })),
+      ];
+    },
+  };
+}
