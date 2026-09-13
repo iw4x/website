@@ -33,8 +33,8 @@ describe("contentSecurityPolicy", () => {
     expect(contentSecurityPolicy()).not.toMatch(/https?:\/\//);
   });
 
-  it("upgrades insecure requests", () => {
-    expect(policy.has("upgrade-insecure-requests")).toBe(true);
+  it("leaves upgrading to HSTS, since WebKit would upgrade requests to local servers too", () => {
+    expect(policy.has("upgrade-insecure-requests")).toBe(false);
   });
 
   it("keeps eval out of production, where React refresh does not run", () => {
@@ -53,7 +53,7 @@ describe("contentSecurityPolicy", () => {
     }
   });
 
-  it("keeps every production directive in development, upgrade-insecure-requests included", () => {
+  it("keeps every production directive in development", () => {
     const development = directives(contentSecurityPolicy({ development: true }));
 
     for (const [directive] of directives(contentSecurityPolicy())) {

@@ -15,7 +15,6 @@ const CSP_DIRECTIVES: readonly (readonly [string, readonly string[]])[] = [
   ["manifest-src", ["'self'"]],
   ["style-src", ["'self'", "'unsafe-inline'"]],
   ["script-src", ["'self'", "'unsafe-inline'"]],
-  ["upgrade-insecure-requests", []],
 ];
 
 const PERMISSIONS = [
