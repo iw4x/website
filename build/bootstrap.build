@@ -1,0 +1,7 @@
+project = iw4x-website
+
+using version
+using config
+using test
+using install
+using dist
