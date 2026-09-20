@@ -1,12 +1,64 @@
-cxx.std = latest
+if ($src_root == $out_root)
+  fail "in source build is not supported; configure an output \
+directory instead"
 
-using cxx
+*: backlink = false
 
-hxx{*}: extension = hxx
-ixx{*}: extension = ixx
-txx{*}: extension = txx
-cxx{*}: extension = cxx
+define css: file
+css{*}: extension = css
 
-# The test target for cross-testing (running tests under Wine, etc).
-#
-test.target = $cxx.target
+define html: doc
+html{*}: extension = html
+
+define xml: file
+xml{*}: extension = xml
+
+define po: file
+po{*}: extension = po
+
+define pot: file
+pot{*}: extension = pot
+
+config [string] config.iw4x_website.url ?= 'https://iw4x.io'
+
+url = $config.iw4x_website.url
+
+config [path] config.iw4x_website.curl     ?= [path] curl
+config [path] config.iw4x_website.chmod    ?= [path] chmod
+config [path] config.iw4x_website.xgettext ?= [path] xgettext
+config [path] config.iw4x_website.msgfmt   ?= [path] msgfmt
+config [path] config.iw4x_website.msgmerge ?= [path] msgmerge
+
+config [path] config.iw4x_website.xmllint  ?= [null]
+
+xmllint = $config.iw4x_website.xmllint
+
+config [config.report] xmllint
+
+curl     = $config.iw4x_website.curl
+chmod    = $config.iw4x_website.chmod
+xgettext = $config.iw4x_website.xgettext
+msgfmt   = $config.iw4x_website.msgfmt
+msgmerge = $config.iw4x_website.msgmerge
+
+config.environment GETTEXTDATADIR
+
+config.environment SSL_CERT_DIR SSL_CERT_FILE CURL_CA_BUNDLE http_proxy https_proxy no_proxy
+
+source $src_root/upstream/tailwind/tailwind.build
+
+if ($build.mode != 'skeleton')
+{
+  linguas = $process.run_regex(cat $src_root/po/LINGUAS, '^([^#].*)$', '\1')
+
+  xgettext_version = $process.run_regex($xgettext --version, \
+    '^xgettext \(GNU gettext-tools\) (.+)$', '\1')
+
+  msgfmt_version = $process.run_regex($msgfmt --version, \
+    '^msgfmt \(GNU gettext-tools\) (.+)$', '\1')
+
+  gettextdatadir = [dir_path] $src_root/po/
+}
+
+its = file{$src_root/po/its/iw4x.its}
+loc = file{$src_root/po/its/iw4x.loc}

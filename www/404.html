@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+
+<!--
+  This is the page Apache serves once a request has fallen through
+  everything else. At that point there isn't really a language to choose
+  from, so keep a single English copy at the site root rather than
+  trying to manufacture one per locale.
+
+  That also means there is nothing for gettext to do here, which is why
+  this file isn't in po/POTFILES.
+
+  Now, unlike index.html, the build doesn't make another copy of this
+  file on the way out. It is installed exactly as written. So avoid
+  anything that would need the configured origin substituted later and
+  keep the links usable from the site root.
+-->
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+
+    <title>Not found - IW4x</title>
+
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+
+    <link rel="preload" as="font" type="font/woff2" href="inter/latin.woff2" crossorigin="anonymous" />
+    <link rel="icon" href="favicon.ico" sizes="any" />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+
+  <body>
+    <main id="main-content" class="flex min-h-svh w-full flex-col items-center justify-center px-6 py-16">
+      <div class="w-full max-w-120 text-center">
+        <p class="text-base font-semibold tracking-body text-accent-text">404</p>
+        <h1 class="mt-2 text-heading font-bold tracking-heading text-foreground">Page not found</h1>
+        <p class="mx-auto mt-4 text-base tracking-body text-muted">
+          That page does not exist. It may have been renamed, or the link that brought you here may be out of date.
+        </p>
+        <div class="mt-10 flex flex-wrap justify-center gap-3">
+          <a
+            href="/en"
+            class="inline-flex min-h-11 items-center justify-center border border-accent-edge bg-accent px-4 text-base font-semibold tracking-body text-accent-ink transition-[color,background-color,border-color] duration-150 ease-out hover:bg-accent-hover active:bg-accent-active"
+            >Go to the homepage</a
+          >
+          <a
+            href="https://docs.iw4x.io/"
+            class="inline-flex min-h-11 items-center justify-center border border-border bg-transparent px-4 text-base font-semibold tracking-body text-foreground transition-[color,background-color,border-color] duration-150 ease-out hover:border-foreground hover:bg-surface active:border-foreground active:bg-surface"
+            >Documentation</a
+          >
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

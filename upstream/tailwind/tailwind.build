@@ -1,0 +1,96 @@
+tailwind_pinned_version = 4.3.3
+
+config [string] config.iw4x_website.tailwind.version ?= $tailwind_pinned_version
+
+tailwind_version = $config.iw4x_website.tailwind.version
+
+config [string] config.iw4x_website.tailwind.url ?= \
+  'https://github.com/tailwindlabs/tailwindcss/releases/download'
+
+config [path] config.iw4x_website.tailwind ?= [null]
+
+tailwind = $config.iw4x_website.tailwind
+
+if ($build.host.class == 'linux')
+{
+  tailwind_musl = $regex.match($build.host.system, 'linux-musl.*')
+
+  if ($build.host.cpu == 'x86_64')
+  {
+    if $tailwind_musl
+    {
+      tailwind_artifact = tailwindcss-linux-x64-musl
+      tailwind_pinned_sha256 = a04d34ceacc8f52cbe8920ad846cdeb61d3d0021dba32db0d1f77c9d9fad7a6c
+    }
+    else
+    {
+      tailwind_artifact = tailwindcss-linux-x64
+      tailwind_pinned_sha256 = dc61b3ac6b8c9ca874c0cc4c57b2409791a64c5540404ca5f5367360babc313a
+    }
+  }
+  elif ($build.host.cpu == 'aarch64')
+  {
+    if $tailwind_musl
+    {
+      tailwind_artifact = tailwindcss-linux-arm64-musl
+      tailwind_pinned_sha256 = 71ea4be79c9de9827545682df3e040053fb535d37c71ed2cfdedf9385a0868e0
+    }
+    else
+    {
+      tailwind_artifact = tailwindcss-linux-arm64
+      tailwind_pinned_sha256 = 55fd0b241214eff3de1e8ee4f22796662f2d2e7a49bcfca7477cfd0bac398195
+    }
+  }
+}
+elif ($build.host.class == 'macos')
+{
+  if ($build.host.cpu == 'x86_64')
+  {
+    tailwind_artifact = tailwindcss-macos-x64
+    tailwind_pinned_sha256 = 7922e0953f2110c05976e3bf58f14e643d90427575e766b7d433f5f80cbee7e1
+  }
+  elif ($build.host.cpu == 'aarch64')
+  {
+    tailwind_artifact = tailwindcss-macos-arm64
+    tailwind_pinned_sha256 = cdf646702987a743464dff4d9c60fd4480d1c1e73dd819a9a67f1078815dce9d
+  }
+}
+elif ($build.host.class == 'windows')
+{
+  if ($build.host.cpu == 'x86_64')
+  {
+    tailwind_artifact = tailwindcss-windows-x64.exe
+    tailwind_pinned_sha256 = e0e260ce048014e9268f6237ff18f8ccf02cef521cbd0ae04e82c2cdf7aa3955
+  }
+}
+
+if (!$defined(tailwind_artifact))
+  fail "no Tailwind CSS CLI release artifact for host $build.host \
+($build.host.cpu, $build.host.class); set \
+config.iw4x_website.tailwind to a CLI built for this host, together with \
+config.iw4x_website.tailwind.checksum"
+
+config [string] config.iw4x_website.tailwind.checksum ?= [null]
+
+if ($config.iw4x_website.tailwind.checksum != [null])
+  tailwind_sha256 = $config.iw4x_website.tailwind.checksum
+elif ($tailwind_version != $tailwind_pinned_version)
+  fail "config.iw4x_website.tailwind.version is $tailwind_version but the \
+checksums in build/tailwind.build are for $tailwind_pinned_version; either \
+update them or pass the expected SHA256 of $tailwind_artifact in \
+config.iw4x_website.tailwind.checksum"
+else
+  tailwind_sha256 = $tailwind_pinned_sha256
+
+tailwind_url = "$config.iw4x_website.tailwind.url/v$tailwind_version/$tailwind_artifact"
+
+tailwind_exe_name = tailwindcss
+
+if ($build.host.class == 'windows')
+  tailwind_exe_name = tailwindcss.exe
+
+tailwind_exe = [path] $out_root/www/$tailwind_exe_name
+
+config [config.report] tailwind_version
+config [config.report] tailwind_artifact
+config [config.report] tailwind_sha256

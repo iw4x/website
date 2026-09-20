@@ -1,0 +1,184 @@
+# The translation setup is perhaps easiest to think about starting from
+# the English page. www/index.html is the source of all user-visible
+# text and the PO catalogues in this directory are translations of
+# strings extracted from that page. We don't author a second HTML tree
+# for translated pages.
+#
+# There are a few bits of information needed to make this work. The ITS
+# rules describe which parts of the HTML contain translatable text.
+# LINGUAS says which translations we publish. POTFILES says which HTML
+# pages participate in extraction. And, finally, each language named in
+# LINGUAS has a matching PO catalogue here.
+#
+# The resulting HTML pages belong to the website, so they are built
+# under www/ in the output tree. See www/buildfile for that side of the
+# arrangement. In particular, it makes the catalogue for each translated
+# page a direct prerequisite of that page. This means changing fr.po,
+# for example, rebuilds the French page without making all the other
+# translations look out of date.
+#
+# There is one gettext detail that ends up affecting the HTML itself.
+# msgfmt --xml replaces element text but doesn't replace attribute
+# values. Thus any text that needs a translation has to exist as element
+# text. This is the reason an icon-only link in www/index.html has a
+# visually hidden span instead of putting its label exclusively in
+# aria-label.
+#
+# The page description is the one current exception. It lives in the
+# content attribute of <meta name="description"> and so remains English
+# in translated pages.
+
+# Start by turning LINGUAS into the actual catalogue targets.
+#
+# Note that these are source targets. Listing a language in LINGUAS
+# means that we expect its catalogue to already exist in this directory.
+# In particular, there is no rule here that invents an empty catalogue
+# for a newly listed language. A missing catalogue should fail the build
+# since the LINGUAS entry would otherwise claim that we ship a
+# translation which we don't have.
+#
+catalogues =
+for l: $linguas
+  catalogues += po{$l}
+
+# POTFILES serves two related purposes. xgettext reads it to find the
+# input pages and build2 needs the same pages as prerequisites of the
+# POT target. Derive one from the other here so there is a single
+# definition of the input set.
+#
+# Ignore comments in POTFILES (if any) and keep the remaining lines as
+# paths relative to the project root. The regular expression
+# deliberately does no further interpretation. POTFILES is already the
+# gettext-facing description of this set and we want to pass the same
+# names to xgettext below.
+#
+potfiles = $process.run_regex(cat $src_base/POTFILES, '^([^#].*)$', '\1')
+
+pages =
+for f: $potfiles
+{
+  # A POTFILES entry names the source file. Split that into its
+  # directory and extension-less leaf so we can spell the same file as a
+  # build2 html{} target.
+  #
+  d = $path.directory($f)
+  n = $path.base($path.leaf($f))
+
+  # Resolve the target from the project source root. This is the target
+  # that actually supplies the English text, so changing it must make
+  # the template out of date.
+  #
+  pages += html{$src_root/$d$n}
+}
+
+# Generate the message template from the English pages.
+#
+# We intentionally don't keep iw4x.pot under version control. It
+# contains text derived entirely from the files named by POTFILES, so
+# keeping a checked-in copy would give us two representations of the
+# same information. Regenerating it makes the HTML the authority and
+# leaves the PO catalogues as the authored translation state.
+#
+# There is a small path detail here that is easy to miss. xgettext
+# normally records the path by which it reached each source file in the
+# "#:" reference. Run it with the project source root as its directory
+# and feed it the relative paths from POTFILES. This gives us references
+# such as www/index.html:42 independent of where somebody happened to
+# check out.
+#
+pot{iw4x}: $its $pages
+{{
+  # xgettext is part of the rule implementation even though its
+  # executable is not a normal file prerequisite. Record its version in
+  # the dependency database so changing the tool version makes this
+  # recipe out of date. This is useful here since the generated POT file
+  # is partly a product of xgettext's formatting and extraction
+  # behaviour.
+  #
+  depdb string "$xgettext_version"
+
+  # Keep the normal build output at the operation level. The complete
+  # command is still available through build2's usual higher verbosity
+  # levels.
+  #
+  diag xgettext $>
+
+  # $<[0] is the ITS prerequisite. Tell xgettext to use those extraction
+  # rules for the HTML, then change its working source directory
+  # logically to $src_root so that POTFILES can stay project-relative.
+  #
+  # Keep --files-from pointed at the source POTFILES file instead of
+  # expanding $pages back into command-line arguments. This means
+  # xgettext and the prerequisite construction above consume the same
+  # file directly.
+  #
+  # --no-wrap is intentional. PO files are source material and stable
+  # paragraph-shaped msgids make changes much easier to review than
+  # wrapping that moves when a nearby word changes.
+  #
+  $xgettext "--its=$path($<[0])"                \
+            "--directory=$src_root"             \
+            "--files-from=$src_base/POTFILES"   \
+            --from-code=UTF-8                   \
+            --add-comments                      \
+            --no-wrap                           \
+            --package-name="$project"           \
+            --package-version="$version"        \
+            --msgid-bugs-address=wroy@proton.me \
+            "--output=$path($>)"
+}}
+
+# Updating an existing catalogue is a source-tree maintenance operation.
+#
+# A normal build reads the PO files and must leave them alone. msgmerge
+# --update does the opposite: it edits each catalogue to match the newly
+# extracted template. Keep that operation behind an explicit alias so
+# running a normal build can never rewrite translator-authored files.
+#
+# The intended maintainer invocation is:
+#
+#   b po/update-po
+#
+# Building this alias first brings pot{iw4x} up to date and then merges
+# that template into every catalogue named by LINGUAS.
+#
+alias{update-po}: pot{iw4x} $catalogues
+{{
+  diag msgmerge $>
+
+  for c: $catalogues
+  {
+    # The first prerequisite is pot{iw4x}. Merge it into this catalogue
+    # in place and ask msgmerge not to leave the usual ~ backup next to
+    # the source file. Version control already gives us the useful
+    # history here.
+    #
+    # Keep the previous msgid on fuzzy matches. A fuzzy entry often
+    # represents an English sentence that was edited, and retaining the
+    # old msgid gives the translator the context needed to update the
+    # translation.
+    #
+    # As with xgettext above, don't let msgmerge reflow entries.
+    #
+    $msgmerge --update      \
+              --backup=none \
+              --previous    \
+              --no-wrap     \
+              $path($c) $path($<[0])
+  }
+}}
+
+# Make the generated template part of the default build.
+#
+# It isn't needed as an installed website file. Building it here is
+# still useful since extraction is part of validating the authored page.
+#
+# A broken ITS rule or HTML input should fail an ordinary build at the
+# point where the translation source is extracted instead of first
+# appearing when somebody explicitly updates the catalogues.
+#
+# Keep the authored catalogues and translation configuration in the
+# default target as well. This gives build2 the complete
+# translation-side dependency graph from the directory root.
+#
+./: pot{iw4x} $catalogues $its $loc file{LINGUAS POTFILES}

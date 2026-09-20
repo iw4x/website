@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+
+<!--
+  This is the English page. Or, perhaps more precisely, this is the page from
+  which all the language pages are made. The build publishes it as /en/ and
+  then feeds the same document to msgfmt once for each language in
+  po/LINGUAS.
+
+  There is deliberately no template language here. So, if we want to change
+  what the English page says, we change it here and then run
+
+    b '<config>/po/alias{update-po}'
+
+  to let gettext figure out what changed for the translators.
+
+  Now, there are two things about this file that are perhaps a little unusual
+  if one approaches it as ordinary HTML.
+
+  The first is that gettext reads it as XML (see po/its/iw4x.its). So let's
+  keep it as polyglot XHTML5. In practice this mostly means being a little
+  stricter than an HTML parser would require: close void elements, quote
+  attributes, and remember the namespace on inline SVG.
+
+  The other is that msgfmt replaces element text but leaves attribute values
+  alone. This matters in a few places where we might otherwise be tempted to
+  put visible or accessible text in an attribute. An aria-label on an icon
+  link, for example, would remain English in every translated page. So use a
+  hidden span instead and let gettext see the same text that a screen reader
+  will see.
+
+  And finally, no JavaScript. There isn't actually anything here that needs it.
+  The requirement switch can use radio buttons, the FAQ already has
+  details/summary, and everything else is just a link.
+-->
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>IW4x</title>
+
+    <meta
+      name="description"
+      content="IW4x is a multiplayer client for Modern Warfare 2 (2009). Play on servers the community runs, or through matchmaking with friends."
+    />
+
+    <meta name="application-name" content="IW4x" />
+    <meta name="robots" content="index, follow" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+
+    <link rel="canonical" href="https://iw4x.io/en" />
+    <link rel="alternate" hreflang="en" href="https://iw4x.io/en" />
+    <link rel="alternate" hreflang="x-default" href="https://iw4x.io/en" />
+
+    <link rel="preload" as="font" type="font/woff2" href="../inter/latin.woff2" crossorigin="anonymous" />
+    <link rel="icon" href="../favicon.ico" sizes="any" />
+    <link rel="stylesheet" href="../site.css" />
+  </head>
+
+  <body>
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:inline-flex focus:min-h-11 focus:min-w-11 focus:items-center focus:border focus:border-border focus:bg-background focus:px-4 focus:font-semibold focus:text-foreground"
+      >Skip to main content</a
+    >
+
+    <header class="absolute inset-x-0 top-0 z-10 px-6">
+      <div class="mx-auto flex min-h-16 w-full max-w-5xl items-center justify-between gap-6 min-[30rem]:min-h-18">
+        <nav aria-labelledby="site-nav-label">
+          <span id="site-nav-label" class="sr-only">Main</span>
+
+          <ul class="flex flex-wrap items-center gap-x-4 gap-y-1 min-[30rem]:gap-x-7">
+            <li>
+              <a
+                href="https://docs.iw4x.io/"
+                class="inline-flex min-h-11 min-w-11 items-center justify-center text-sm font-semibold tracking-body text-muted transition-[color] duration-150 ease-out hover:text-foreground min-[30rem]:text-base"
+                >Documentation</a
+              >
+            </li>
+
+            <li>
+              <a
+                href="https://forum.iw4x.io"
+                class="inline-flex min-h-11 min-w-11 items-center justify-center text-sm font-semibold tracking-body text-muted transition-[color] duration-150 ease-out hover:text-foreground min-[30rem]:text-base"
+                >Forum</a
+              >
+            </li>
+          </ul>
+        </nav>
+
+        <div class="hidden shrink-0 min-[30rem]:block">
+          <a
+            href="https://docs.iw4x.io/get-started/quickstart/"
+            class="inline-flex min-h-11 items-center justify-center border border-accent-edge bg-accent px-4 text-base font-semibold tracking-body text-accent-ink transition-[color,background-color,border-color] duration-150 ease-out hover:bg-accent-hover active:bg-accent-active"
+            >Download</a
+          >
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content" tabindex="-1">
+      <div class="flex flex-col items-center">
+        <section id="home" aria-labelledby="home-heading" class="relative flex min-h-svh w-full flex-col items-center justify-center px-6 py-16">
+          <div class="flex w-full max-w-120 flex-col items-center text-center">
+            <h1 id="home-heading" translate="no" class="text-display font-bold tracking-display text-foreground"
+              >IW4<span class="text-wordmark-accent">x</span></h1
+            >
+
+            <p class="mt-6 max-w-none text-base tracking-body text-balance text-muted md:whitespace-nowrap"
+              >Multiplayer client for Call of Duty: Modern Warfare 2.</p
+            >
+
+            <div class="mt-10 flex w-full flex-wrap justify-center gap-3">
+              <a
+                href="https://docs.iw4x.io/get-started/quickstart/"
+                class="inline-flex min-h-12 flex-1 basis-40 items-center justify-center border border-accent-edge bg-accent px-6 text-base font-semibold tracking-body text-accent-ink transition-[color,background-color,border-color] duration-150 ease-out hover:bg-accent-hover active:bg-accent-active"
+                >Download</a
+              >
+
+              <a
+                href="https://docs.iw4x.io/"
+                class="inline-flex min-h-12 flex-1 basis-40 items-center justify-center border border-border bg-transparent px-6 text-base font-semibold tracking-body text-foreground transition-[color,background-color,border-color] duration-150 ease-out hover:border-foreground hover:bg-surface active:border-foreground active:bg-surface"
+                >Documentation</a
+              >
+            </div>
+
+            <nav aria-labelledby="community-label" class="mt-10 w-full border-t border-rule pt-8">
+              <span id="community-label" class="sr-only">Community</span>
+
+              <ul class="flex flex-wrap items-center justify-center gap-6">
+                <li>
+                  <a
+                    href="https://discord.com/invite/pV2qJscTXf"
+                    class="inline-flex size-11 items-center justify-center text-muted transition-[color] duration-150 ease-out hover:text-foreground"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true" focusable="false">
+                      <path
+                        d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"
+                      />
+                    </svg>
+
+                    <span class="sr-only">IW4x on Discord</span>
+                  </a>
+                </li>
+
+                <li>
+                  <a
+                    href="https://github.com/iw4x"
+                    class="inline-flex size-11 items-center justify-center text-muted transition-[color] duration-150 ease-out hover:text-foreground"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true" focusable="false">
+                      <path
+                        d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23a11.52 11.52 0 0 1 3-.405c1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
+                      />
+                    </svg>
+
+                    <span class="sr-only">IW4x on GitHub</span>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+
+          <div class="absolute inset-x-0 bottom-6 flex justify-center">
+            <a
+              href="#about"
+              class="inline-flex min-h-11 items-center gap-2 px-1 text-base tracking-body text-muted transition-[color] duration-150 ease-out hover:text-foreground"
+              ><span>Learn more</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+                ><path d="m6 9 6 6 6-6" /></svg
+              ></a
+            >
+          </div>
+        </section>
+
+        <section id="about" aria-labelledby="about-heading" class="w-full border-t border-rule px-6 py-20">
+          <div class="mx-auto grid w-full max-w-5xl gap-x-16 gap-y-8 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] md:items-start">
+            <header>
+              <p class="text-base font-semibold tracking-body text-accent-text">About</p>
+              <h2 id="about-heading" class="mt-2 text-heading font-bold tracking-heading text-foreground">What is IW4x</h2>
+            </header>
+
+            <div class="min-w-0">
+              <p class="text-lg tracking-body text-foreground"
+                >IW4x is a multiplayer client for Modern Warfare 2, built and maintained by the players who use it.</p
+              >
+
+              <p class="text-base tracking-body text-muted"
+                >It runs on the 2009 game you already own. IW4x comes in two versions, and the one you install changes where you play and who you play with.</p
+              >
+
+              <dl class="mt-10 border-t border-border">
+                <div class="grid gap-x-6 gap-y-1 border-b border-rule py-6 sm:grid-cols-[6rem_minmax(0,1fr)] sm:items-center">
+                  <!-- x86 is a name here, so leave it alone. -->
+                  <dt translate="no" class="text-base font-bold tracking-body text-foreground">x86</dt>
+
+                  <dd class="text-base tracking-body text-muted"
+                    >Connects to servers that players host, each with its own rules and mods. It has no friends list and no parties.</dd
+                  >
+                </div>
+
+                <div class="grid gap-x-6 gap-y-1 border-b border-rule py-6 sm:grid-cols-[6rem_minmax(0,1fr)] sm:items-center">
+                  <dt translate="no" class="text-base font-bold tracking-body text-foreground">x64</dt>
+
+                  <dd class="text-base tracking-body text-muted"
+                    >Finds a match for you and keeps your friends and parties in the client. It has no mods and no dedicated servers.</dd
+                  >
+                </div>
+              </dl>
+            </div>
+          </div>
+        </section>
+
+        <section id="requirements" aria-labelledby="requirements-heading" class="w-full border-t border-rule px-6 py-20">
+          <div class="mx-auto grid w-full max-w-5xl gap-x-16 gap-y-8 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] md:items-start">
+            <header>
+              <p class="text-base font-semibold tracking-body text-accent-text">Compatibility</p>
+              <h2 id="requirements-heading" class="mt-2 text-heading font-bold tracking-heading text-foreground">System requirements</h2>
+            </header>
+
+            <div class="min-w-0">
+              <fieldset>
+                <legend class="sr-only">Requirement baseline</legend>
+
+                <div class="grid grid-cols-[auto_auto_minmax(0,1fr)] gap-x-7">
+                  <input type="radio" id="requirements-client" name="requirements" class="peer/client sr-only" checked="checked" />
+                  <input type="radio" id="requirements-server" name="requirements" class="peer/server sr-only" />
+
+                  <label
+                    for="requirements-client"
+                    class="inline-flex min-h-11 cursor-pointer items-center border-b-2 border-transparent px-1 text-base font-semibold tracking-body text-muted transition-[color,border-color] duration-150 ease-out hover:text-foreground peer-checked/client:border-accent-edge peer-checked/client:text-foreground peer-focus-visible/client:outline-3 peer-focus-visible/client:outline-offset-3 peer-focus-visible/client:outline-foreground"
+                    >Client</label
+                  >
+
+                  <label
+                    for="requirements-server"
+                    class="inline-flex min-h-11 cursor-pointer items-center border-b-2 border-transparent px-1 text-base font-semibold tracking-body text-muted transition-[color,border-color] duration-150 ease-out hover:text-foreground peer-checked/server:border-accent-edge peer-checked/server:text-foreground peer-focus-visible/server:outline-3 peer-focus-visible/server:outline-offset-3 peer-focus-visible/server:outline-foreground"
+                    >Server</label
+                  >
+
+                  <dl class="col-span-full hidden border-t border-border peer-checked/client:block">
+                    <div class="grid gap-x-8 gap-y-1 border-b border-rule py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-baseline">
+                      <dt class="text-base font-semibold tracking-body text-muted">Processor</dt>
+                      <dd class="text-base tracking-body text-foreground">Intel Pentium 4 3.2 GHz or AMD Athlon 64 3200+</dd>
+                    </div>
+
+                    <div class="grid gap-x-8 gap-y-1 border-b border-rule py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-baseline">
+                      <dt class="text-base font-semibold tracking-body text-muted">Memory</dt>
+                      <dd class="text-base tracking-body text-foreground">1 GB</dd>
+                    </div>
+
+                    <div class="grid gap-x-8 gap-y-1 border-b border-rule py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-baseline">
+                      <dt class="text-base font-semibold tracking-body text-muted">Graphics</dt>
+                      <dd class="text-base tracking-body text-foreground">256 MB GeForce 6600GT or Radeon 1600XT</dd>
+                    </div>
+
+                    <div class="grid gap-x-8 gap-y-1 border-b border-rule py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-baseline">
+                      <dt class="text-base font-semibold tracking-body text-muted">Storage</dt>
+                      <dd class="text-base tracking-body text-foreground">12 GB available space</dd>
+                    </div>
+
+                    <div class="grid gap-x-8 gap-y-1 border-b border-rule py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-baseline">
+                      <dt class="text-base font-semibold tracking-body text-muted">Connection</dt>
+                      <dd class="text-base tracking-body text-foreground">Broadband internet</dd>
+                    </div>
+                  </dl>
+
+                  <dl class="col-span-full hidden border-t border-border peer-checked/server:block">
+                    <div class="grid gap-x-8 gap-y-1 border-b border-rule py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-baseline">
+                      <dt class="text-base font-semibold tracking-body text-muted">Processor</dt>
+                      <dd class="text-base tracking-body text-foreground">2 cores</dd>
+                    </div>
+
+                    <div class="grid gap-x-8 gap-y-1 border-b border-rule py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-baseline">
+                      <dt class="text-base font-semibold tracking-body text-muted">Memory</dt>
+                      <dd class="text-base tracking-body text-foreground">About 500 MB per server</dd>
+                    </div>
+
+                    <div class="grid gap-x-8 gap-y-1 border-b border-rule py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-baseline">
+                      <dt class="text-base font-semibold tracking-body text-muted">Upload</dt>
+                      <dd class="text-base tracking-body text-foreground">At least 5 to 10 megabits per second</dd>
+                    </div>
+
+                    <div class="grid gap-x-8 gap-y-1 border-b border-rule py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-baseline">
+                      <dt class="text-base font-semibold tracking-body text-muted">Graphics</dt>
+                      <dd class="text-base tracking-body text-foreground">Not required</dd>
+                    </div>
+
+                    <div class="grid gap-x-8 gap-y-1 border-b border-rule py-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-baseline">
+                      <dt class="text-base font-semibold tracking-body text-muted">Network</dt>
+                      <dd class="text-base tracking-body text-foreground">Port forwarding or firewall access</dd>
+                    </div>
+                  </dl>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+        </section>
+
+        <section id="get-involved" aria-labelledby="get-involved-heading" class="w-full border-t border-rule px-6 py-20">
+          <div class="mx-auto grid w-full max-w-5xl gap-x-16 gap-y-8 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] md:items-start">
+            <header>
+              <p class="text-base font-semibold tracking-body text-accent-text">Open source</p>
+              <h2 id="get-involved-heading" class="mt-2 text-heading font-bold tracking-heading text-foreground">Get involved</h2>
+            </header>
+
+            <div class="min-w-0">
+              <p class="text-lg tracking-body text-foreground">Anyone can read the IW4x code and follow how it changes.</p>
+
+              <p class="text-base tracking-body text-muted"
+                >Most of the work happens in public on GitHub. Start with an open issue, or write down what you learned for the next person.</p
+              >
+
+              <nav aria-labelledby="contribute-label" class="mt-10 flex flex-wrap gap-3">
+                <span id="contribute-label" class="sr-only">Ways to contribute</span>
+
+                <a
+                  href="https://github.com/iw4x"
+                  class="inline-flex min-h-11 items-center justify-center border border-accent-edge bg-accent px-4 text-base font-semibold tracking-body text-accent-ink transition-[color,background-color,border-color] duration-150 ease-out hover:bg-accent-hover active:bg-accent-active"
+                  >Browse GitHub</a
+                >
+
+                <a
+                  href="https://docs.iw4x.io/"
+                  class="inline-flex min-h-11 items-center justify-center border border-border bg-transparent px-4 text-base font-semibold tracking-body text-foreground transition-[color,background-color,border-color] duration-150 ease-out hover:border-foreground hover:bg-surface active:border-foreground active:bg-surface"
+                  >Contributor guide</a
+                >
+              </nav>
+            </div>
+          </div>
+        </section>
+
+        <section id="faq" aria-labelledby="faq-heading" class="w-full border-t border-rule px-6 py-20">
+          <div class="mx-auto grid w-full max-w-5xl gap-x-16 gap-y-8 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] md:items-start">
+            <header>
+              <p class="text-base font-semibold tracking-body text-accent-text">Support</p>
+              <h2 id="faq-heading" class="mt-2 text-heading font-bold tracking-heading text-foreground">Frequently asked questions</h2>
+            </header>
+
+            <div class="min-w-0">
+              <div class="border-t border-border">
+                <details class="group border-b border-rule">
+                  <summary
+                    class="flex min-h-16 cursor-pointer list-none items-center justify-between gap-8 text-base font-semibold tracking-body text-foreground transition-[color] duration-150 ease-out hover:text-accent-text"
+                    ><span>Is IW4x a mod?</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" class="shrink-0 transition-transform duration-150 ease-out group-open:rotate-180"
+                      ><path d="m6 9 6 6 6-6" /></svg
+                    ></summary
+                  >
+
+                  <p class="pb-6 text-base tracking-body text-muted"
+                    >No. IW4x is a separate multiplayer client, not a mod. Servers can run mods on x86, but you do not need mods to play.</p
+                  >
+                </details>
+
+                <details class="group border-b border-rule">
+                  <summary
+                    class="flex min-h-16 cursor-pointer list-none items-center justify-between gap-8 text-base font-semibold tracking-body text-foreground transition-[color] duration-150 ease-out hover:text-accent-text"
+                    ><span>Which client should I use?</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" class="shrink-0 transition-transform duration-150 ease-out group-open:rotate-180"
+                      ><path d="m6 9 6 6 6-6" /></svg
+                    ></summary
+                  >
+
+                  <p class="pb-6 text-base tracking-body text-muted"
+                    >Choose x86 if you want community servers and mods. Rules and content change from one server to the next. Choose x64 if you want to play with friends through matchmaking. Its matches stay closer to the original game.</p
+                  >
+                </details>
+
+                <details class="group border-b border-rule">
+                  <summary
+                    class="flex min-h-16 cursor-pointer list-none items-center justify-between gap-8 text-base font-semibold tracking-body text-foreground transition-[color] duration-150 ease-out hover:text-accent-text"
+                    ><span>Do I need mods to play?</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" class="shrink-0 transition-transform duration-150 ease-out group-open:rotate-180"
+                      ><path d="m6 9 6 6 6-6" /></svg
+                    ></summary
+                  >
+
+                  <p class="pb-6 text-base tracking-body text-muted"
+                    >No. Each server decides what content it runs, and x64 does not run mods at all.</p
+                  >
+                </details>
+
+                <details class="group border-b border-rule">
+                  <summary
+                    class="flex min-h-16 cursor-pointer list-none items-center justify-between gap-8 text-base font-semibold tracking-body text-foreground transition-[color] duration-150 ease-out hover:text-accent-text"
+                    ><span>Can I play with friends?</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" class="shrink-0 transition-transform duration-150 ease-out group-open:rotate-180"
+                      ><path d="m6 9 6 6 6-6" /></svg
+                    ></summary
+                  >
+
+                  <p class="pb-6 text-base tracking-body text-muted"
+                    >On x64, add them to your friends list and invite them to your party. x86 has no party system. Host a private server or a game on your local network, then share the address.</p
+                  >
+                </details>
+
+                <details class="group border-b border-rule">
+                  <summary
+                    class="flex min-h-16 cursor-pointer list-none items-center justify-between gap-8 text-base font-semibold tracking-body text-foreground transition-[color] duration-150 ease-out hover:text-accent-text"
+                    ><span>Can I host a server?</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" class="shrink-0 transition-transform duration-150 ease-out group-open:rotate-180"
+                      ><path d="m6 9 6 6 6-6" /></svg
+                    ></summary
+                  >
+
+                  <p class="pb-6 text-base tracking-body text-muted"
+                    >Yes, on x86. It runs dedicated servers, and this site lists the ones that are online. x64 has no dedicated servers.</p
+                  >
+                </details>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="releases" aria-labelledby="releases-heading" class="w-full border-t border-rule px-6 py-20">
+          <div class="mx-auto grid w-full max-w-5xl gap-y-10">
+            <header>
+              <p class="text-base font-semibold tracking-body text-accent-text">Archive</p>
+              <h2 id="releases-heading" class="mt-2 text-heading font-bold tracking-heading text-foreground">Release archive</h2>
+            </header>
+
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2">
+                <p class="text-base tracking-body text-muted">Earlier IW4x client builds, kept for reference.</p>
+
+                <a
+                  href="https://github.com/iw4x/iw4x-client/releases"
+                  class="inline-flex min-h-11 items-center text-base font-semibold tracking-body text-foreground underline underline-offset-4 transition-[color] duration-150 ease-out hover:text-accent-text"
+                  >All releases</a
+                >
+              </div>
+
+              <ul class="mt-6 border-t border-border sm:grid sm:auto-rows-fr">
+                <li class="grid gap-x-8 gap-y-4 border-b border-rule py-6 sm:grid-cols-[10rem_1fr] sm:items-center">
+                  <p class="min-w-0">
+                    <span translate="no" class="block text-base font-semibold tracking-body text-foreground">r5123</span>
+                    <time datetime="2026-09-10" class="block text-base tracking-body text-muted">September 10, 2026</time>
+                  </p>
+
+                  <div class="flex flex-wrap gap-3 sm:justify-end">
+                    <a
+                      href="https://github.com/iw4x/iw4x-client/releases/tag/r5123"
+                      class="inline-flex min-h-11 items-center justify-center border border-border bg-transparent px-4 text-base font-semibold tracking-body text-foreground transition-[color,background-color,border-color] duration-150 ease-out hover:border-foreground hover:bg-surface active:border-foreground active:bg-surface"
+                      >Changelog</a
+                    >
+
+                    <a
+                      href="https://github.com/iw4x/iw4x-client/releases/download/r5123/iw4x.dll"
+                      class="inline-flex min-h-11 items-center justify-center border border-accent-edge bg-accent px-4 text-base font-semibold tracking-body text-accent-ink transition-[color,background-color,border-color] duration-150 ease-out hover:bg-accent-hover active:bg-accent-active"
+                      >Download</a
+                    >
+                  </div>
+                </li>
+
+                <li class="grid gap-x-8 gap-y-4 border-b border-rule py-6 sm:grid-cols-[10rem_1fr] sm:items-center">
+                  <p class="min-w-0">
+                    <span translate="no" class="block text-base font-semibold tracking-body text-foreground">r5121</span>
+                    <time datetime="2026-09-06" class="block text-base tracking-body text-muted">September 6, 2026</time>
+                  </p>
+
+                  <div class="flex flex-wrap gap-3 sm:justify-end">
+                    <a
+                      href="https://github.com/iw4x/iw4x-client/releases/tag/r5121"
+                      class="inline-flex min-h-11 items-center justify-center border border-border bg-transparent px-4 text-base font-semibold tracking-body text-foreground transition-[color,background-color,border-color] duration-150 ease-out hover:border-foreground hover:bg-surface active:border-foreground active:bg-surface"
+                      >Changelog</a
+                    >
+
+                    <a
+                      href="https://github.com/iw4x/iw4x-client/releases/download/r5121/iw4x.dll"
+                      class="inline-flex min-h-11 items-center justify-center border border-accent-edge bg-accent px-4 text-base font-semibold tracking-body text-accent-ink transition-[color,background-color,border-color] duration-150 ease-out hover:bg-accent-hover active:bg-accent-active"
+                      >Download</a
+                    >
+                  </div>
+                </li>
+
+                <li class="grid gap-x-8 gap-y-4 border-b border-rule py-6 sm:grid-cols-[10rem_1fr] sm:items-center">
+                  <p class="min-w-0">
+                    <span translate="no" class="block text-base font-semibold tracking-body text-foreground">r5120</span>
+                    <time datetime="2026-09-06" class="block text-base tracking-body text-muted">September 6, 2026</time>
+                  </p>
+
+                  <div class="flex flex-wrap gap-3 sm:justify-end">
+                    <a
+                      href="https://github.com/iw4x/iw4x-client/releases/tag/r5120"
+                      class="inline-flex min-h-11 items-center justify-center border border-border bg-transparent px-4 text-base font-semibold tracking-body text-foreground transition-[color,background-color,border-color] duration-150 ease-out hover:border-foreground hover:bg-surface active:border-foreground active:bg-surface"
+                      >Changelog</a
+                    >
+
+                    <a
+                      href="https://github.com/iw4x/iw4x-client/releases/download/r5120/iw4x.dll"
+                      class="inline-flex min-h-11 items-center justify-center border border-accent-edge bg-accent px-4 text-base font-semibold tracking-body text-accent-ink transition-[color,background-color,border-color] duration-150 ease-out hover:bg-accent-hover active:bg-accent-active"
+                      >Download</a
+                    >
+                  </div>
+                </li>
+
+                <li class="grid gap-x-8 gap-y-4 border-b border-rule py-6 sm:grid-cols-[10rem_1fr] sm:items-center">
+                  <p class="min-w-0">
+                    <span translate="no" class="block text-base font-semibold tracking-body text-foreground">r5115</span>
+                    <time datetime="2026-09-05" class="block text-base tracking-body text-muted">September 5, 2026</time>
+                  </p>
+
+                  <div class="flex flex-wrap gap-3 sm:justify-end">
+                    <a
+                      href="https://github.com/iw4x/iw4x-client/releases/tag/r5115"
+                      class="inline-flex min-h-11 items-center justify-center border border-border bg-transparent px-4 text-base font-semibold tracking-body text-foreground transition-[color,background-color,border-color] duration-150 ease-out hover:border-foreground hover:bg-surface active:border-foreground active:bg-surface"
+                      >Changelog</a
+                    >
+
+                    <a
+                      href="https://github.com/iw4x/iw4x-client/releases/download/r5115/iw4x.dll"
+                      class="inline-flex min-h-11 items-center justify-center border border-accent-edge bg-accent px-4 text-base font-semibold tracking-body text-accent-ink transition-[color,background-color,border-color] duration-150 ease-out hover:bg-accent-hover active:bg-accent-active"
+                      >Download</a
+                    >
+                  </div>
+                </li>
+
+                <li class="grid gap-x-8 gap-y-4 border-b border-rule py-6 sm:grid-cols-[10rem_1fr] sm:items-center">
+                  <p class="min-w-0">
+                    <span translate="no" class="block text-base font-semibold tracking-body text-foreground">r5112</span>
+                    <time datetime="2026-09-05" class="block text-base tracking-body text-muted">September 5, 2026</time>
+                  </p>
+
+                  <div class="flex flex-wrap gap-3 sm:justify-end">
+                    <a
+                      href="https://github.com/iw4x/iw4x-client/releases/tag/r5112"
+                      class="inline-flex min-h-11 items-center justify-center border border-border bg-transparent px-4 text-base font-semibold tracking-body text-foreground transition-[color,background-color,border-color] duration-150 ease-out hover:border-foreground hover:bg-surface active:border-foreground active:bg-surface"
+                      >Changelog</a
+                    >
+
+                    <a
+                      href="https://github.com/iw4x/iw4x-client/releases/download/r5112/iw4x.dll"
+                      class="inline-flex min-h-11 items-center justify-center border border-accent-edge bg-accent px-4 text-base font-semibold tracking-body text-accent-ink transition-[color,background-color,border-color] duration-150 ease-out hover:bg-accent-hover active:bg-accent-active"
+                      >Download</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

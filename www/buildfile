@@ -1,0 +1,461 @@
+# Keep generated files out of the source tree. This is useful for the
+# usual out-of-tree build reasons, though in this project it gives us
+# something a little stronger as well: anything under www/ is input that
+# somebody maintains and anything under the corresponding output
+# directory is produced by the build.
+#
+# This makes the output directory a fairly literal image of the website
+# we are going to install. In particular, starting with this source
+# directory and an empty output directory must be enough to reproduce
+# the published site. If we ever find ourselves relying on a generated
+# file left in www/, then we have broken that property.
+
+# tailwind.build has already selected the Tailwind artifact for this
+# host. At this point we know its URL and checksum, and possibly have a
+# configured local copy. What remains is to turn that selection into an
+# executable that the rest of this build can depend on.
+#
+# It may be tempting to acquire Tailwind directly from the site.css
+# recipe. Giving the executable its own target is useful here. build2
+# can avoid acquiring it until something actually needs it and, perhaps
+# more interestingly, the stylesheet gets a real prerequisite
+# representing the program that generated it. If the selected Tailwind
+# artifact changes, site.css then becomes out of date through the normal
+# dependency graph.
+#
+# Note that this executable belongs to the build machinery. It is
+# neither installed with the website nor placed in the distribution. A
+# build from a distribution performs the same host selection and
+# acquires its own copy.
+#
+tailwind_cli = exe{tailwindcss}
+
+# Unix Tailwind releases are ordinary files with the executable bit
+# expected to be set after downloading. The Windows release already has
+# executable semantics in the first place. Record that distinction here
+# so the recipe below doesn't have to infer it from the artifact name.
+#
+tailwind_chmod = ($build.host.class != 'windows')
+
+$tailwind_cli:
+{
+  install = false
+}
+{{
+  # There are a few inputs here that build2 cannot see in the usual way.
+  # Perhaps the obvious one is the URL: changing it may mean a
+  # completely different artifact with $> itself unchanged.
+  #
+  # The checksum is perhaps even more interesting since the URL could
+  # stay exactly the same and yet we may now expect different bytes. And
+  # then there is $tailwind which, if set, changes where those bytes
+  # come from.
+  #
+  # So let's remember all three.
+  #
+  depdb string "$tailwind_url"
+  depdb string "$tailwind_sha256"
+  depdb string "$tailwind"
+
+  # curl can get some of its configuration from the environment. We
+  # could probably ignore most of this in the common case, but then
+  # changing, say, the certificate setup would be invisible to the
+  # recipe. So remember the variables curl may look at as well.
+  #
+  depdb env SSL_CERT_DIR SSL_CERT_FILE CURL_CA_BUNDLE http_proxy https_proxy no_proxy
+
+  diag tailwindcss $>
+
+  # Now, acquiring directly into $> would be tempting but it gives us a
+  # slightly unpleasant case if the operation is interrupted: we could
+  # leave what looks like a perfectly good target containing only part
+  # of the artifact.
+  #
+  # So do the acquisition into a temporary file and move it into place
+  # once we have checked everything. And since a previous attempt may
+  # have stopped before the move, get rid of an old temporary file
+  # first.
+  #
+  t = "$path($>).t"
+  rm -f "$t"
+
+  if ("$tailwind" != '')
+  {
+    # If $tailwind is set then there is nothing to download. Still,
+    # let's copy it to the temporary file rather than straight to $>.
+    # This way the local artifact goes through exactly the same check
+    # below and we only have one path by which $> can appear.
+    #
+    cp "$tailwind" "$t"
+  }
+  else
+  {
+    # Otherwise fetch the selected release artifact. The release URL may
+    # redirect, hence --location. A few retries are useful for the usual
+    # transient network failures and there isn't much value in curl
+    # printing anything when everything went fine.
+    #
+    $curl --fail        \
+          --silent      \
+          --show-error  \
+          --location    \
+          --retry 3     \
+          --output "$t" "$tailwind_url"
+  }
+
+  # We have something that looks like the artifact now, so check that it
+  # is actually the one selected in tailwind.build before going any
+  # further.
+  #
+  sha256sum --sum-only "$t" | set sum
+
+  if ("$sum" != "$tailwind_sha256")
+  {
+    # Perhaps we could leave the bad file around for inspection, but
+    # there is little useful state in it that isn't already captured by
+    # the two checksums below. More awkwardly, it would look like
+    # unfinished state from the next attempt. So remove it.
+    #
+    rm -f "$t"
+
+    exit "$tailwind_artifact does not have its expected checksum: wanted \
+$tailwind_sha256, got $sum"
+  }
+
+  if $tailwind_chmod
+  {
+    # On Unix the downloaded artifact still needs to be made executable.
+    #
+    $chmod +x "$t"
+  }
+
+  # And now the temporary file is the artifact we wanted and, on hosts
+  # where it matters, is executable. So this is the point where we can
+  # finally give it the target name.
+  #
+  mv "$t" $path($>)
+}}
+
+# tailwind.css is what we edit and site.css is what the website loads.
+# They live at the same relative place in the source and output trees,
+# which is convenient, though we still want different names here so the
+# authored file and the generated one remain unambiguous to the build.
+#
+tailwind_in = css{tailwind}
+
+# Tailwind has to scan the HTML before it knows which utility classes to
+# emit. The slightly awkward part is that those files are discovered
+# through @source in tailwind.css and never appear on the command line
+# below. Tailwind knows about them, in other words, but build2 does not.
+#
+# So list the same files here and make them real prerequisites of
+# site.css. There are now two descriptions of the scan set, which is
+# perhaps easy to get out of sync. Automatic discovery is disabled in
+# tailwind.css and the testscript compares its @source entries with this
+# list, so forgetting one side should be caught fairly quickly.
+#
+tailwind_scan = html{index 404}
+
+css{site}: $tailwind_in $tailwind_cli $tailwind_scan
+{
+  install = data/www/
+}
+{{
+  diag tailwindcss $>
+
+  # This pipe perhaps deserves an explanation. Tailwind changes the
+  # state of the stderr descriptor it inherits. If we hand it the
+  # recipe's stderr directly, that change can still be visible to
+  # build2's in-process builtins after Tailwind exits.
+  #
+  # So put a pipe in between and let cat copy the diagnostics back to
+  # stderr. Tailwind can then do whatever it does to its end of the pipe
+  # without changing the descriptor that build2 keeps using.
+  #
+  $tailwind_cli --input $path($tailwind_in) --output $path($>) --minify 2>&1 | cat >&2
+
+  # There is one more slightly odd Tailwind detail here. If regenerating
+  # the stylesheet produces exactly the same CSS, Tailwind leaves the
+  # existing output file alone.
+  #
+  # Say index.html becomes newer but the edit doesn't add or remove any
+  # utility classes. We come through this recipe, Tailwind finds that
+  # site.css already has the right contents, and its timestamp remains
+  # older than index.html. The next build would then come through here
+  # again for no useful reason.
+  #
+  # So touch the target after a successful run. In the unchanged-content
+  # case that simply records that we have already considered the current
+  # inputs.
+  #
+  touch $path($>)
+}}
+
+# English is the source language, so there is no gettext work to do for
+# it. We still want the language component in the published URL though,
+# which means producing en/index.html just like we produce the
+# translated pages below.
+#
+html{en/index}: html{index}
+{
+  install = data/www/en/
+}
+{{
+  # $url is another input that never appears as a normal prerequisite.
+  # If the configured origin changes then this page has to change with
+  # it, so remember the value in the depdb.
+  #
+  depdb string "$url"
+
+  diag gen $>
+
+  # Keep the real production origin in the authored document. That gives
+  # index.html sensible metadata when it is opened directly and leaves
+  # us with one stable string to replace here.
+  #
+  # Now substitute the configured origin into the generated copy.
+  #
+  sed -e "s|https\\://iw4x\\.io|$url|g" $path($<) >$path($>)
+}}
+
+pages = html{en/index}
+
+for l: $linguas
+{
+  p = html{$l/index}
+  pages += $p
+
+  # One detail worth getting right here is the catalogue prerequisite.
+  # It would be easy to depend on all the PO files and let build2 sort
+  # it out, but an edit to fr.po would then make de/index.html out of
+  # date for no reason.
+  #
+  # msgfmt reads exactly one catalogue for each page, so give the page
+  # exactly that prerequisite.
+  #
+  $p: html{index} po{$src_root/po/$l} $its $loc
+  {
+    install = data/www/$l/
+    lang = $l
+  }
+  {{
+    # msgfmt itself was found elsewhere. What we need to remember here
+    # is the version we found, since changing it means the program doing
+    # this transformation has changed with none of the file
+    # prerequisites necessarily changing.
+    #
+    depdb string "$msgfmt_version"
+
+    # $url and $lang are similar to the Tailwind values above: both
+    # affect the result, neither is represented by a file prerequisite.
+    # So remember them here as well.
+    #
+    depdb string "$url"
+    depdb string "$lang"
+
+    # msgfmt has one more input that is easy to miss. It finds the ITS
+    # data through GETTEXTDATADIR, so a change there is invisible from
+    # the command line. Put the environment value into the depdb as
+    # well.
+    #
+    depdb env GETTEXTDATADIR
+
+    diag msgfmt $>
+
+    # The result from msgfmt isn't quite the page we want to publish.
+    # There is still a small serialization cleanup below, so keep this
+    # first result under a temporary name and reserve $> for the
+    # finished page.
+    #
+    t = "$path($>).t"
+
+    # --replace-text is perhaps easy to overlook. Without it msgfmt
+    # keeps the source text and adds the translated text alongside it.
+    # Here we want the translated text to occupy the same place as the
+    # English text, hence the option.
+    #
+    env "GETTEXTDATADIR=$gettextdatadir" -- \
+      $msgfmt --xml -L iw4x --replace-text "--template=$path($<[0])" \
+              --locale=$lang --output-file="$t" $path($<[1])
+
+    # Now comes the slightly fiddly part. msgfmt has done the
+    # translation, but its XML serialization is not quite the text/html
+    # document we want to publish. There are only a few differences, so
+    # fix them together here.
+    #
+    # First is the prologue. msgfmt writes an XML declaration and keeps
+    # the doctype from the template. An HTML parser treats that
+    # declaration as a bogus comment, leaving the doctype in the wrong
+    # place for what we want. So blank the original doctype and turn the
+    # XML declaration into a new one.
+    #
+    # Note that the order of those two substitutions matters. If we
+    # produced the new doctype first, the expression that blanks the old
+    # one could see the new one as well. Leaving the old line empty is
+    # harmless, so there is no real reason to add another pass just to
+    # remove it.
+    #
+    # Next are the xml:lang attributes that msgfmt adds to translated
+    # elements. This page has a single language, so put that information
+    # on the root html element and remove the per-element copies.
+    #
+    # Then fix the canonical URL. The template quite naturally names
+    # /en, since that is the page we author. A translated copy needs to
+    # name its own language instead.
+    #
+    # Finally substitute the configured origin. Do this last so the
+    # canonical rewrite above can keep matching the stable production
+    # URL from the source document instead of having to know what $url
+    # happens to be.
+    #
+    sed -e 's|^\<!DOCTYPE html>$||'                                             \
+        -e 's|^<[?]xml[^>]*[?]>$|\<!DOCTYPE html>|'                             \
+        -e 's| xml:lang="[a-z]*"||g'                                          \
+        -e "s|\<html xmlns=\"http\://www\.w3.org/1999/xhtml\" lang=\"en\">|\<html xmlns=\"http\://www\.w3.org/1999/xhtml\" lang=\"$lang\" xml:lang=\"$lang\">|" \
+        -e "s|rel=\"canonical\" href=\"https\://iw4x\\.io/en\"|rel=\"canonical\" href=\"https\://iw4x.io/$lang\"|" \
+        -e "s|https\\://iw4x\\.io|$url|g"                                       \
+        "$t" >$path($>)
+
+    # And that is the finished page. Nothing below needs the
+    # intermediate XML, so get rid of it now rather than leaving scratch
+    # state in the output directory.
+    #
+    rm -f "$t"
+  }}
+}
+
+# We need the same language alternation in a couple of places below. We
+# could construct it independently each time, though that would give us
+# two bits of code that are supposed to describe the same language set.
+#
+# So build it once here. LINGUAS contains the translated languages and,
+# as a result, does not contain English. Add it explicitly before
+# forming the alternation.
+#
+locales = $regex.merge(en $linguas, '(.+)', '\1', '|')
+
+# The sitemap has one URL entry for every language page, with each entry
+# naming the other language versions of the same document.
+#
+# It may be tempting to make the generated pages prerequisites here. The
+# sitemap never reads them though. All it needs is the language set and
+# the origin. Changing a sentence in fr.po cannot change sitemap.xml, so
+# depending on html{fr/index} would only make that edit rebuild
+# something whose contents are already known to be unchanged.
+#
+xml{sitemap}:
+{
+  install = data/www/
+}
+{{
+  # Neither of the two things we actually use to form the URLs is
+  # represented by a file prerequisite, so remember them in the depdb.
+  #
+  depdb string "$url"
+  depdb string "$locales"
+
+  diag gen $>
+
+  o = $path($>)
+
+  # Start with the prologue and then append one entry per language.
+  # There is no intermediate format here and no external program
+  # producing the file for us, so writing the target directly keeps this
+  # recipe pleasantly simple.
+  #
+  echo '<?xml version="1.0" encoding="UTF-8"?>' >$o
+  echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' >>$o
+
+  for l: en $linguas
+  {
+    echo "  <url>" >>$o
+    echo "    <loc>$url/$l</loc>" >>$o
+
+    # Now repeat the full alternate set for this URL. It looks a little
+    # repetitive when generated, but each entry has to describe its
+    # relation to every other language version, so there isn't really
+    # anything to factor out in the resulting XML.
+    #
+    for a: en $linguas
+    {
+      echo "    <xhtml:link rel=\"alternate\" hreflang=\"$a\" href=\"$url/$a\"/>" >>$o
+    }
+
+    # And use English for the language-neutral entry.
+    #
+    echo "    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"$url/en\"/>" >>$o
+    echo "  </url>" >>$o
+  }
+
+  echo '</urlset>' >>$o
+}}
+
+# robots.txt is almost static. The awkward bit is the Sitemap line,
+# since its origin follows $url and cannot simply be written once in the
+# source tree.
+#
+# We could add a template for that single substitution. With only four
+# lines to produce, writing the file here is perhaps easier to read.
+#
+file{robots.txt}:
+{
+  install = data/www/
+}
+{{
+  # $url is the only bit of configuration that can change the result.
+  #
+  depdb string "$url"
+
+  diag gen $>
+
+  o = $path($>)
+
+  echo 'User-agent: *' >$o
+  echo 'Allow: /' >>$o
+  echo '' >>$o
+  echo "Sitemap: $url/sitemap.xml" >>$o
+}}
+
+# The language part of the URL belongs to the site itself, so keep the
+# matching server rules here with the rest of the site.
+#
+# Most of .htaccess is ordinary authored text and lives in htaccess.in.
+# The language alternation is the one part that is awkward to write
+# there, since it has to follow LINGUAS. So leave a @locales@ hole in
+# the template and fill it from the value above.
+#
+file{.htaccess}: file{htaccess.in}
+{
+  install = data/www/
+}
+{{
+  # Changing LINGUAS changes $locales without changing htaccess.in, so
+  # remember the value explicitly.
+  #
+  depdb string "$locales"
+
+  diag gen $>
+
+  sed -e "s,@locales@,$locales,g" $path($<) >$path($>)
+}}
+
+# 404.html and favicon.ico need no work at all. The @./ qualification is
+# worth spelling out though: these are the files in the source
+# directory, not targets that we expect some rule to produce in the
+# output directory.
+#
+static = html{404}@./ file{favicon.ico}@./
+
+$static: install = data/www/
+
+# index.html is a slightly different case. It is source for the page
+# rules above and should never appear in the installed tree by itself.
+# Since html derives from doc, it would otherwise pick up the usual
+# installation semantics. Turn those off for this source target.
+#
+html{index}@./: install = false
+
+# And finally collect the whole site under the directory target.
+#
+./: css{site} $pages xml{sitemap} $static inter/ \
+    file{robots.txt .htaccess}

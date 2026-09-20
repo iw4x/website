@@ -1,0 +1,18 @@
+testscript{*}: test = $recall($build.path)
+
+testscript{*}:
+{
+  test.options += --no-default-options --serial-stop
+
+  project_src = [dir_path] $src_root
+
+  tailwind = $tailwind_exe
+  tailwind_sha256 = $tailwind_sha256
+
+  linguas = $linguas
+  xmllint = $xmllint
+}
+
+include ../www/
+
+./: testscript $out_root/www/exe{tailwindcss}

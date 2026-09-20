@@ -1,0 +1,198 @@
+@import "tailwindcss" source(none);
+
+@source "./index.html";
+@source "./404.html";
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("inter/latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("inter/latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Inter Fallback";
+  src: local("Arial");
+  size-adjust: 107.12%;
+  ascent-override: 90.44%;
+  descent-override: 22.52%;
+  line-gap-override: 0%;
+}
+
+:root {
+  color-scheme: light dark;
+
+  --color-neutral-50: oklch(98.5% 0 none);
+  --color-neutral-100: oklch(97% 0 none);
+  --color-neutral-200: oklch(92.2% 0 none);
+  --color-neutral-300: oklch(87% 0 none);
+  --color-neutral-500: oklch(55.6% 0 none);
+  --color-neutral-800: oklch(26.9% 0 none);
+  --color-neutral-900: oklch(20.5% 0 none);
+  --color-neutral-950: oklch(14.5% 0 none);
+  --color-lime-400: oklch(84.1% 0.238 128.85);
+  --color-lime-500: oklch(76.8% 0.233 130.85);
+  --color-lime-900: oklch(40.5% 0.101 131.063);
+
+  --background: var(--color-neutral-100);
+  --surface: var(--color-neutral-300);
+  --foreground: var(--color-neutral-950);
+  --muted: var(--color-neutral-800);
+
+  --border: var(--color-neutral-500);
+  --rule: var(--color-neutral-300);
+
+  --accent: var(--color-lime-400);
+  --accent-hover: var(--color-lime-500);
+  --accent-active: var(--color-lime-500);
+  --accent-ink: var(--color-neutral-950);
+  --accent-edge: var(--color-lime-900);
+  --accent-text: var(--color-lime-900);
+  --wordmark-accent: var(--color-neutral-950);
+
+  --focus-ring: var(--color-neutral-950);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: var(--color-neutral-950);
+    --surface: var(--color-neutral-800);
+    --foreground: var(--color-neutral-50);
+    --muted: var(--color-neutral-300);
+
+    --rule: var(--color-neutral-800);
+
+    --accent-edge: var(--color-lime-400);
+    --accent-text: var(--color-lime-400);
+    --wordmark-accent: var(--color-lime-400);
+
+    --focus-ring: var(--color-neutral-50);
+  }
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+
+  --color-border: var(--border);
+  --color-rule: var(--rule);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-edge: var(--accent-edge);
+  --color-accent-text: var(--accent-text);
+  --color-wordmark-accent: var(--wordmark-accent);
+
+  --text-display: clamp(2.5rem, 1.1667rem + 6.6667vw, 6.5rem);
+  --text-display--line-height: 1;
+
+  --text-heading: 2rem;
+  --text-heading--line-height: 1.15;
+
+  --tracking-body: -0.011em;
+  --tracking-heading: -0.0216em;
+  --tracking-display: -0.0223em;
+
+  --font-sans:
+    Inter, "Inter Fallback", system-ui, -apple-system, "Segoe UI", "Noto Sans",
+    "Noto Sans SC", "Noto Sans JP", "Noto Sans KR", sans-serif;
+}
+
+@layer base {
+  html {
+    line-height: 1.5;
+    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    text-size-adjust: 100%;
+  }
+
+  /* A measure, so that prose stays readable on a wide viewport. */
+  :where(p, li, dt, dd, blockquote, figcaption) {
+    max-inline-size: 62ch;
+  }
+
+  :where(p) + :where(p) {
+    margin-block-start: 1.5lh;
+  }
+
+  :where(p) {
+    text-wrap: pretty;
+  }
+
+  :where(h1, h2, h3, h4, h5, h6) {
+    text-wrap: balance;
+  }
+
+  :where(li:has(:is(div, p, section, article, ul, ol, dl, h1, h2, h3, h4, h5, h6))) {
+    max-inline-size: none;
+  }
+
+  :where(:lang(zh), :lang(ja), :lang(ko)) {
+    line-height: 1.7;
+    letter-spacing: normal;
+    text-autospace: normal;
+    text-spacing-trim: space-first;
+    line-break: strict;
+    hanging-punctuation: allow-end;
+  }
+
+  :where(p, li, dt, dd, blockquote, figcaption):where(:lang(zh), :lang(ja), :lang(ko)) {
+    max-inline-size: 40ic;
+  }
+
+  :where(:lang(ja)) {
+    word-break: auto-phrase;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--focus-ring, currentColor);
+    outline-offset: 3px;
+  }
+
+  [tabindex="-1"]:focus-visible {
+    outline: none;
+  }
+
+  @media (forced-colors: active) {
+    :focus-visible {
+      outline-color: Highlight;
+    }
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

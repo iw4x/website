@@ -1,0 +1,5 @@
+fonts = file{latin.woff2}@./ file{latin-ext.woff2}@./ file{LICENSE}@./
+
+$fonts: install = data/www/inter/
+
+./: $fonts

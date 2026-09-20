@@ -1,0 +1,569 @@
++export BDEP_SYNC=0
+
+: sources
+:
+{{
+  : hreflang-matches-linguas
+  :
+  {
+    echo en >=expected
+    for l: $linguas
+      echo $l >+expected
+
+    sed -n -e 's%^ *<link rel="alternate" hreflang="([a-z]+)" .*%\1%p' \
+      $project_src/www/index.html >=actual
+
+    diff expected actual
+  }
+
+  : every-language-has-a-catalogue
+  :
+  for l: $linguas
+    test -f $project_src/po/$(l).po
+
+  : catalogues-are-complete
+  :
+  for l: $linguas
+    msgfmt --check --output-file=- $project_src/po/$(l).po >- 2>-
+
+  : tailwind-sources-match-scan
+  :
+  {
+    sed -n -e 's%^@source "\./(.+)";$%\1%p' $project_src/www/tailwind.css >>EOO
+    index.html
+    404.html
+    EOO
+
+    sed -n -e 's%^tailwind_scan = html\{(.+)\}$%\1%p' \
+      $project_src/www/buildfile >'index 404'
+  }
+
+  : no-scripting
+  :
+  for f: index.html 404.html
+  {
+    sed -n -e 's%.*(<script).*%\1%p' $project_src/www/$f
+    sed -n -e 's%.*( on[a-z]+=").*%\1%p' $project_src/www/$f
+    sed -n -e 's%.*(javascript:).*%\1%p' $project_src/www/$f
+  }
+
+  : no-translatable-attributes
+  :
+  sed -n -e 's%.*(aria-label=).*%\1%p' $project_src/www/index.html
+}}
+
+: build
+:
+{{
+  out = $~/out
+
+  site = $~/stage/share/iw4x-website/www
+
+  +$* 'configure:' $project_src/@$out/                        \
+     "config.iw4x_website.tailwind=$tailwind"                 \
+     "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+     &$out/*** >! 2>!
+
+  +$* $out/ >! 2>!
+
+  +$* 'install:' $out/ "config.install.root=$~/stage" &$~/stage/*** >! 2>!
+
+  : published-files
+  :
+  {
+    test -f $site/site.css
+    test -f $site/en/index.html
+    test -f $site/404.html
+    test -f $site/favicon.ico
+    test -f $site/sitemap.xml
+    test -f $site/robots.txt
+    test -f $site/.htaccess
+
+    test -f $site/inter/latin.woff2
+    test -f $site/inter/latin-ext.woff2
+    test -f $site/inter/LICENSE
+
+    test -f $site/inter/buildfile == 1
+    test -f $site/buildfile == 1
+    test -f $site/tailwind.css == 1
+
+    for l: $linguas
+      test -f $site/$l/index.html
+  }
+
+  : nothing-is-generated-into-the-source-tree
+  :
+  {
+    test -f $project_src/www/site.css == 1
+    test -d $project_src/www/en == 1
+    test -f $project_src/po/iw4x.pot == 1
+  }
+
+  : english-page-is-the-authored-document
+  :
+  {
+    sed -n -e 's%^<html [^>]*lang="([a-z]+)" xml:lang="[a-z]+">$%\1%p' \
+      $site/en/index.html >'en'
+
+    sed -n -e 's%^ *>(Multiplayer client[^<]*)</p$%\1%p' \
+      $site/en/index.html >'Multiplayer client for Call of Duty: Modern Warfare 2.'
+  }
+
+  : pages-are-servable-as-text-html
+  :
+  for l: en $linguas
+  {
+    sed -n -e 's%^(<!DOCTYPE html>)$%\1%p' $site/$l/index.html \
+      >'<!DOCTYPE html>'
+
+    sed -n -e 's%^(<[?]xml).*%\1%p' $site/$l/index.html
+
+    sed -n -e 's%^(<html [^>]*xml:lang="[a-z]+">)$%found%p' \
+      $site/$l/index.html >'found'
+
+    sed -n -e 's%^[^<].*( xml:lang=").*%\1%p' $site/$l/index.html
+  }
+
+  : published-pages-carry-no-scripting
+  :
+  for l: en $linguas
+  {
+    sed -n -e 's%.*(<script).*%\1%p' $site/$l/index.html
+    sed -n -e 's%.*( on[a-z]+=").*%\1%p' $site/$l/index.html
+  }
+
+  : internal-links-resolve
+  :
+  {
+    for l: en $linguas
+    {
+      sed -n -e 's%.*href="(/[^"#]*)".*%\1%p' $site/$l/index.html >=abs
+      sed -n -e 's%.*href="\.\./([^"#]+)".*%\1%p' $site/$l/index.html >=rel
+
+      for -n p <=abs
+        test -f $site$p/index.html
+
+      for -n r <=rel
+        test -f $site/$r
+    }
+
+    sed -n -e 's%.*href="(/[^"#]*)".*%\1%p' $site/404.html >=abs
+    sed -n -e 's%.*href="([a-z][^":#]*)".*%\1%p' $site/404.html >=rel
+
+    for -n p <=abs
+      test -f $site$p/index.html
+
+    for -n r <=rel
+      test -f $site/$r
+
+    for l: en $linguas
+      sed -n -e 's%.*(rel="stylesheet" href="/).*%\1%p' $site/$l/index.html
+  }
+
+  : stylesheet
+  :
+  {
+    for u: text-muted bg-accent border-rule text-display tracking-body \
+           text-wordmark-accent max-w-120 sr-only
+      sed -n -e "s%.*[.]$u[,{ ].*%found%p" $site/site.css >'found'
+
+    sed -n -e 's%.*[.]text-display[{][^}]*line-height[^}]*[}].*%found%p' \
+      $site/site.css >'found'
+
+    sed -n -e 's%.*[.]text-heading[{][^}]*line-height[^}]*[}].*%found%p' \
+      $site/site.css >'found'
+
+    for l: en $linguas
+      sed -n -e 's%.*<link rel="stylesheet" href="([^"]+)" ?/>.*%\1%p' \
+        $site/$l/index.html >'../site.css'
+
+    sed -n -e 's%.*<link rel="stylesheet" href="([^"]+)" ?/>.*%\1%p' \
+      $site/404.html >'site.css'
+  }
+
+  : generated-pages-are-well-formed
+  :
+  ifn! $xmllint
+  {
+    for l: en $linguas
+      $xmllint --noout $site/$l/index.html
+
+    $xmllint --noout $site/404.html
+    $xmllint --noout $site/sitemap.xml
+  }
+
+  : webfont-is-self-hosted
+  :
+  {
+    sed -n -e 's%.*url[(]inter/latin[.]woff2[)].*%found%p' \
+      $site/site.css >'found'
+
+    sed -n -e 's%.*url[(]inter/latin-ext[.]woff2[)].*%found%p' \
+      $site/site.css >'found'
+
+    test -f $site/inter/latin.woff2
+    test -f $site/inter/latin-ext.woff2
+
+    for l: en $linguas
+      sed -n -e 's%.*<link rel="preload" as="font" [^>]*href="([^"]+)".*%\1%p' \
+        $site/$l/index.html >'../inter/latin.woff2'
+
+    sed -n -e 's%.*(fonts[.]googleapis[.]com).*%\1%p' $site/site.css
+    sed -n -e 's%.*(fonts[.]gstatic[.]com).*%\1%p' $site/site.css
+    sed -n -e 's%.*(@import url[(]http).*%\1%p' $site/site.css
+
+    sed -n -e 's%.*(font-src .self.).*%\1%p' $site/.htaccess >"font-src 'self'"
+  }
+
+  : the-font-licence-ships-with-the-font
+  :
+  {
+    sed -n -e 's%^(Copyright [(]c[)] 2016 The Inter Project Authors).*%\1%p' \
+      $site/inter/LICENSE >'Copyright (c) 2016 The Inter Project Authors'
+
+    sed -n -e 's%^(SIL OPEN FONT LICENSE Version 1[.]1).*%\1%p' \
+      $site/inter/LICENSE >'SIL OPEN FONT LICENSE Version 1.1'
+  }
+
+  : sitemap-lists-every-language
+  :
+  {
+    echo en >=expected
+    for l: $linguas
+      echo $l >+expected
+
+    sed -n -e 's%^ *<loc>https://iw4x\.io/([a-z]+)</loc>$%\1%p' \
+      $site/sitemap.xml >=actual
+
+    diff expected actual
+  }
+
+  : server-rules-know-every-language
+  :
+  sed -n -e 's%.*\!\^/\(\?:([a-z|]+)\).*%\1%p' $site/.htaccess \
+    >"$regex.merge(en $linguas, '(.+)', '\1', '|')"
+
+  -$* $out/ 2>>~%EOE%
+    %info: dir\{.+\} is up to date%
+    EOE
+}}
+
+: translation
+:
+{{
+  +$* 'configure:' $project_src/@$~/cfg/ &$~/cfg/*** >! 2>!
+
+  +$* 'dist:' $~/cfg/ "config.dist.root=$~/dist" config.dist.uncommitted=true \
+     &$~/dist/*** >! 2>!
+
+  +find $~/dist -mindepth 1 -maxdepth 1 -type d | set -n authored [dir_path]
+
+  : a-catalogue-produces-a-translated-page
+  :
+  {
+    cp -r $authored src
+
+    cat <<EOI >=src/po/zz.po
+    msgid ""
+    msgstr ""
+    "MIME-Version: 1.0\n"
+    "Content-Type: text/plain; charset=UTF-8\n"
+    "Content-Transfer-Encoding: 8bit\n"
+    "Language: zz\n"
+
+    msgid "Multiplayer client for Call of Duty: Modern Warfare 2."
+    msgstr "ZZ TAGLINE"
+
+    msgid "IW4x on Discord"
+    msgstr "ZZ DISCORD"
+    EOI
+
+    echo zz >=src/po/LINGUAS
+
+    $* 'configure:' $~/src/@$~/out/                             \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    page = $~/out/www/zz/index.html
+
+    sed -n -e 's%^<html [^>]*lang="([a-z]+)" xml:lang="[a-z]+">$%\1%p' \
+      $page >'zz'
+
+    sed -n -e 's%^ *<link rel="canonical" href="https://iw4x\.io/([a-z]+)"/>$%\1%p' \
+      $page >'zz'
+
+    sed -n -e 's%.*>(ZZ TAGLINE)</p>.*%\1%p' $page >'ZZ TAGLINE'
+
+    sed -n -e 's%.*<span class="sr-only">(ZZ DISCORD)</span>.*%\1%p' \
+      $page >'ZZ DISCORD'
+
+    sed -n -e 's%.*>(IW4)<span class="text-wordmark-accent">x</span>.*%\1%p' \
+      $page >'IW4'
+
+    sed -n -e 's%.*<dt translate="no" [^>]*>(x86)</dt>.*%\1%p' $page >'x86'
+
+    sed -n -e 's%^(<!DOCTYPE html>)$%\1%p' $page >'<!DOCTYPE html>'
+    sed -n -e 's%^(<[?]xml).*%\1%p' $page
+    sed -n -e 's%^[^<].*( xml:lang=").*%\1%p' $page
+  }
+}}
+
+: dependency-tracking
+:
+{{
+  +$* 'configure:' $project_src/@$~/cfg/ &$~/cfg/*** >! 2>!
+
+  +$* 'dist:' $~/cfg/ "config.dist.root=$~/dist" config.dist.uncommitted=true \
+     &$~/dist/*** >! 2>!
+
+  +find $~/dist -mindepth 1 -maxdepth 1 -type d | set -n authored [dir_path]
+
+  : changing-a-catalogue-rebuilds-only-that-language
+  :
+  {
+    cp -r $authored src
+
+    for l: zz zy
+    cat <<EOI >=src/po/$(l).po
+    msgid ""
+    msgstr ""
+    "MIME-Version: 1.0\n"
+    "Content-Type: text/plain; charset=UTF-8\n"
+    "Content-Transfer-Encoding: 8bit\n"
+
+    msgid "Multiplayer client for Call of Duty: Modern Warfare 2."
+    msgstr "PLACEHOLDER TAGLINE"
+    EOI
+
+    cat <<EOI >=src/po/LINGUAS
+    zz
+    zy
+    EOI
+
+    $* 'configure:' $~/src/@$~/out/                             \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    sed -i -e 's%^msgstr "PLACEHOLDER TAGLINE"$%msgstr "zz CHANGED"%' src/po/zz.po
+
+    $* $~/out/ 2>>~%EOE%
+      %msgfmt .+zz.html\{index\}%
+      EOE
+
+    sed -n -e 's%.*(zz CHANGED).*%\1%p' $~/out/www/zz/index.html >'zz CHANGED'
+  }
+
+  : changing-a-page-rebuilds-the-stylesheet
+  :
+  {
+    cp -r $authored src
+
+    $* 'configure:' $~/src/@$~/out/                             \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    sed -n -e 's%.*(\.tabular-nums).*%\1%p' $~/out/www/site.css
+
+    sed -i -e 's%^    <title>IW4x</title>$%    <title>IW4x</title>\n    <meta name="x" class="tabular-nums"/>%' \
+      src/www/index.html
+
+    $* $~/out/ >! 2>!
+
+    sed -n -e 's%.*(\.tabular-nums).*%\1%p' $~/out/www/site.css >'.tabular-nums'
+  }
+
+  : removing-a-language-removes-its-page
+  :
+  {
+    cp -r $authored src
+
+    for l: zz zy
+    cat <<EOI >=src/po/$(l).po
+    msgid ""
+    msgstr ""
+    "MIME-Version: 1.0\n"
+    "Content-Type: text/plain; charset=UTF-8\n"
+    "Content-Transfer-Encoding: 8bit\n"
+
+    msgid "Multiplayer client for Call of Duty: Modern Warfare 2."
+    msgstr "PLACEHOLDER TAGLINE"
+    EOI
+
+    cat <<EOI >=src/po/LINGUAS
+    zz
+    zy
+    EOI
+
+    $* 'configure:' $~/src/@$~/out/                             \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    test -f $~/out/www/zy/index.html
+
+    $* 'clean:' $~/out/ >! 2>!
+
+    sed -i -e 's%^zy$%%' src/po/LINGUAS
+
+    $* $~/out/ >! 2>!
+
+    test -f $~/out/www/zy/index.html == 1
+    test -f $~/out/www/zz/index.html
+
+    sed -n -e 's%^ *<loc>https://iw4x\.io/(zy)</loc>$%\1%p' $~/out/www/sitemap.xml
+  }
+
+  : cleaning-removes-every-generated-file
+  :
+  {
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    test -f $~/out/www/en/index.html
+    test -f $~/out/www/site.css
+    test -f $~/out/po/iw4x.pot
+
+    $* 'clean:' $~/out/ >! 2>!
+
+    test -f $~/out/www/en/index.html == 1
+    test -f $~/out/www/site.css == 1
+    test -f $~/out/www/sitemap.xml == 1
+    test -f $~/out/po/iw4x.pot == 1
+  }
+}}
+
+: tailwind-acquisition
+:
+{{
+  : a-wrong-checksum-fails-the-build
+  :
+  {
+    $* 'configure:' $project_src/@$~/out/       \
+       "config.iw4x_website.tailwind=$tailwind" \
+       config.iw4x_website.tailwind.checksum=0000000000000000000000000000000000000000000000000000000000000000 \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/www/ 2>>~%EOE% != 0
+      %.*%*
+      %.*does not have its expected checksum.*%
+      %.*%*
+      EOE
+
+    test -f $~/out/www/$leaf($tailwind) == 1
+  }
+
+  : changing-where-the-tool-comes-from-re-acquires-it
+  :
+  {
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    $* $~/out/ "config.iw4x_website.tailwind.url=https://example.invalid/mirror" \
+      2>>~%EOE%
+      %tailwindcss .+exe\{tailwindcss\}%
+      %tailwindcss .+css\{site\}%
+      %.*%*
+      EOE
+
+    $* $~/out/ "config.iw4x_website.tailwind.url=https://example.invalid/mirror" \
+      2>>~%EOE%
+      %info: dir\{.+\} is up to date%
+      EOE
+  }
+
+  : a-new-version-needs-its-own-checksum
+  :
+  $* 'configure:' $project_src/@$~/out/ \
+     config.iw4x_website.tailwind.version=0.0.0 &?$~/out/*** 2>>~%EOE% != 0
+    %.*%*
+    %.*checksums in build/tailwind\.build are for.*%
+    %.*%*
+    EOE
+}}
+
+: distribution
+:
+{{
+  +$* 'configure:' $project_src/@$~/cfg/                      \
+     "config.iw4x_website.tailwind=$tailwind"                 \
+     "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+     &$~/cfg/*** >! 2>!
+
+  +$* $~/cfg/ >! 2>!
+
+  +$* 'install:' $~/cfg/ "config.install.root=$~/checkout-stage" \
+     &$~/checkout-stage/*** >! 2>!
+
+  +$* 'dist:' $~/cfg/ "config.dist.root=$~/dist" config.dist.uncommitted=true \
+     &$~/dist/*** >! 2>!
+
+  +find $~/dist -mindepth 1 -maxdepth 1 -type d | set -n authored [dir_path]
+
+  : carries-the-authored-files-and-nothing-else
+  :
+  {
+    for f: manifest buildfile README.md LICENSE.md                      \
+           build/bootstrap.build build/root.build                       \
+           www/buildfile www/index.html www/404.html www/tailwind.css   \
+           www/htaccess.in www/favicon.ico                              \
+           po/buildfile po/LINGUAS po/POTFILES                          \
+           po/its/iw4x.its po/its/iw4x.loc                              \
+           upstream/tailwind/tailwind.build                             \
+           www/inter/buildfile www/inter/latin.woff2                    \
+           www/inter/latin-ext.woff2 www/inter/LICENSE                  \
+           tests/buildfile tests/testscript
+      test -f $authored/$f
+
+    for l: $linguas
+      test -f $authored/po/$(l).po
+
+    test -f $authored/www/site.css == 1
+    test -f $authored/po/iw4x.pot == 1
+    test -d $authored/www/en == 1
+
+    test -d $authored/.git == 1
+    test -d $authored/.bdep == 1
+
+    find $authored -name tailwindcss
+    find $authored -name '*.pot'
+  }
+
+  : rebuilds-and-installs-to-the-same-site
+  :
+  {
+    $* 'configure:' $authored/@$~/out/                          \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+    $* 'install:' $~/out/ "config.install.root=$~/stage" &$~/stage/*** >! 2>!
+
+    for f: site.css en/index.html 404.html sitemap.xml robots.txt .htaccess
+      diff "$~/../checkout-stage/share/iw4x-website/www/$f" \
+           "$~/stage/share/iw4x-website/www/$f"
+
+    for l: $linguas
+      diff "$~/../checkout-stage/share/iw4x-website/www/$l/index.html" \
+           "$~/stage/share/iw4x-website/www/$l/index.html"
+  }
+}}

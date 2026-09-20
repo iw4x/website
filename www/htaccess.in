@@ -1,0 +1,151 @@
+# Most of this is ordinary Apache configuration. The one bit we cannot
+# really write down here is the language alternation since that comes
+# from po/LINGUAS. The build substitutes @locales@ for us, which is nice
+# since the redirects then follow the pages without us having to
+# remember to update both.
+#
+# There are a few assumptions about the surrounding Apache
+# configuration. AllowOverride needs to let us use Options, FileInfo,
+# Indexes and Limit, and the header and rewrite modules need to be
+# around. Also, leave UseCanonicalName Off. Otherwise Apache may decide
+# it knows the host name better than the request did when constructing a
+# redirect.
+
+# First get Apache's own path guessing out of the way. MultiViews in
+# particular is rather easy to forget about and can make a request match
+# some nearby file before the rewrite rules below ever see it.
+#
+# We also don't want directory listings. And turn DirectorySlash off
+# since we deliberately use /en rather than /en/ below. Letting mod_dir
+# add the slash would just mean undoing it again afterwards.
+#
+Options -MultiViews -Indexes
+DirectoryIndex index.html
+DirectorySlash Off
+
+# The site is pleasantly boring from a browser policy point of view.
+# Everything comes from the same origin, there is no JavaScript, and
+# there isn't anything that needs to embed us or be embedded by us. So
+# we can keep this fairly restrictive without having to punch holes in
+# it later.
+#
+# data: for images is the one small exception. The rest is just the
+# usual browser hardening for a static HTTPS site.
+#
+Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; script-src 'none'; style-src 'self'"
+Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+Header always set X-Content-Type-Options "nosniff"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+Header always set Cross-Origin-Opener-Policy "same-origin"
+Header always set Cross-Origin-Resource-Policy "same-origin"
+Header always set Permissions-Policy "accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), usb=(), xr-spatial-tracking=()"
+
+# Pages and the small static files keep their names between releases. We
+# could cache them for a long time, but then replacing site.css or
+# favicon.ico would take just as long to make its way out to browsers.
+#
+# So keep the browser cache short and let shared caches be a little more
+# generous. Serving something stale for a while is fine if the origin
+# happens to be unavailable.
+#
+Header always set Cache-Control "public, max-age=300, s-maxage=86400, stale-while-revalidate=86400, stale-if-error=86400"
+
+# Fonts are worth treating differently. They are large and,
+# realistically, change almost never, so a month saves quite a few
+# repeat transfers.
+#
+# Maybe immutable would look attractive here, except the filenames don't
+# carry a version. If we ever replace one in place then we do want it to
+# be fetched again eventually.
+#
+Header always set Cache-Control "public, max-age=2592000, stale-while-revalidate=86400, stale-if-error=86400" "expr=%{REQUEST_URI} =~ m#^/inter/#"
+
+# A 404 is almost the opposite case. There isn't much reason for the
+# browser to keep it, though letting a shared cache remember one briefly
+# avoids repeatedly asking for the same missing thing.
+#
+# And while we are matching the 404 response, keep it out of search
+# results as well.
+#
+Header always set Cache-Control "public, max-age=0, s-maxage=300, stale-while-revalidate=300, stale-if-error=3600" "expr=%{REQUEST_STATUS} -eq 404"
+Header always set X-Robots-Tag "noindex" "expr=%{REQUEST_STATUS} -eq 404"
+
+# If deflate is available, use it for the few text formats we serve.
+# Nothing particularly clever here.
+#
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/xml
+</IfModule>
+
+# Keep the error page outside the language directories. By the time we
+# get here there may not be a useful language to choose anyway.
+#
+ErrorDocument 404 /404.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Start with the slightly strange double-slash case. A leading // is
+  # not always just an untidy path to a browser in that it can be
+  # interpreted as a protocol-relative URL and suddenly mean another
+  # host.
+  #
+  # THE_REQUEST is useful here since it still has what came in on the
+  # request line before Apache has had a chance to tidy things up for
+  # us.
+  #
+  RewriteCond %{THE_REQUEST} \s/{2,}
+  RewriteRule ^(.*)$ /$1 [R=308,L,QSA]
+
+  # Now get rid of trailing slashes. We use the slashless spelling
+  # everywhere, so there isn't much value in letting both forms survive.
+  #
+  RewriteCond %{REQUEST_URI} ^(.+?)/+$
+  RewriteRule ^ %1 [R=308,L,QSA]
+
+  # docs looks like part of this site in links, though the actual
+  # documentation lives on docs.iw4x.io. Accept the language-prefixed
+  # spelling too since a link may naturally inherit the current page
+  # prefix.
+  #
+  RewriteRule ^(?:(?:@locales@)/)?docs$ https://docs.iw4x.io/ [R=307,L]
+
+  # Now for requests that arrived without a language. At the moment we
+  # simply send those to English.
+  #
+  # The Vary may look a little early since we aren't choosing from
+  # Accept-Language yet. Still, if that becomes the choice later, shared
+  # caches must not reuse one locale redirect for everybody. Mark only
+  # the responses produced by these rules rather than every response
+  # from the site.
+  #
+  Header always set Vary "Accept-Language" "expr=reqenv('SITE_LOCALE_REDIRECT') != ''"
+
+  # The site root is the easy case.
+  #
+  RewriteRule ^$ /en [R=307,L,QSA,E=SITE_LOCALE_REDIRECT:1]
+
+  # The other case needs a little care. A path that already starts with
+  # one of our languages is fine as it is. A real file or directory is
+  # fine too since things such as site.css, favicon.ico and inter/ live
+  # outside the language directories.
+  #
+  # Anything still left is a page-like path without a language, so put
+  # it under /en.
+  #
+  RewriteCond %{REQUEST_URI} !^/(?:@locales@)(?:/|$)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ /en/$1 [R=307,L,QSA,E=SITE_LOCALE_REDIRECT:1]
+
+  # Turning DirectorySlash off above leaves one last job for us. /en
+  # really is a directory on disk, but we don't want Apache to redirect
+  # it to /en/.
+  #
+  # So when a slashless request lands on a directory, quietly serve its
+  # index.html instead. This gives us the public /en spelling without
+  # involving another redirect.
+  #
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^(.*[^/])$ /$1/index.html [L,QSA]
+</IfModule>

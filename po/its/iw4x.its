@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<its:rules version="2.0"
+           xmlns:its="http://www.w3.org/2005/11/its"
+           xmlns:h="http://www.w3.org/1999/xhtml"
+           xmlns:s="http://www.w3.org/2000/svg">
+  <its:translateRule selector="/h:html"                translate="yes"/>
+  <its:translateRule selector="//@*"                   translate="no" />
+  <its:translateRule selector="//h:head"               translate="no" />
+  <its:translateRule selector="//h:title"              translate="yes"/>
+  <its:translateRule selector="//h:script | //h:style" translate="no" />
+  <its:translateRule selector="//s:svg"                translate="no" />
+  <its:translateRule selector="//h:*[@translate='no']" translate="no" />
+</its:rules>
