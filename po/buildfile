@@ -137,7 +137,7 @@ pot{iw4x}: $its $pages
 #
 # The intended maintainer invocation is:
 #
-#   b po/update-po
+#   b 'po/alias{update-po}'
 #
 # Building this alias first brings pot{iw4x} up to date and then merges
 # that template into every catalogue named by LINGUAS.
@@ -168,6 +168,80 @@ alias{update-po}: pot{iw4x} $catalogues
   }
 }}
 
+# strings.html contains the text from which we generate the release
+# rows. Now, for English there isn't really anything to do since
+# www/buildfile can use the authored file directly. For every other
+# language we need the same fragment after msgfmt has replaced its text
+# from the corresponding catalogue.
+#
+# Where should these translated fragments live? Perhaps the obvious
+# place would be www/ next to the pages that consume them. But they
+# aren't pages and will never be installed. In fact, they only exist
+# long enough for www/buildfile to read them while constructing a page.
+# So keeping them here seems more natural and, maybe more usefully,
+# keeps the www/ output tree looking like the tree we are actually going
+# to publish.
+#
+# There is one small catch with the authored file. html{} derives from
+# doc{} and so normally comes with installation semantics. In our case
+# strings.html is strictly an input to translation and should never turn
+# up in the installed site. So suppress installation on it.
+#
+$strings: install = false
+
+strings_pages =
+
+for l: $linguas
+{
+  p = html{$l/strings}
+  strings_pages += $p
+
+  # Now give each translated fragment just the catalogue that can change
+  # it. We could make every catalogue a prerequisite and let the command
+  # pick the right one, but then changing, say, fr.po would make all
+  # these targets out of date. There is no reason to do that since $l
+  # already tells us exactly which catalogue this invocation is going to
+  # read.
+  #
+  $p: $strings po{$l} $its $loc
+  {
+    install = false
+    lang = $l
+  }
+  {{
+    # There are a few inputs to msgfmt that are easy to miss here since
+    # they aren't ordinary prerequisites. The executable may stay at the
+    # same path while its version changes. The language comes from the
+    # target variable rather than a file. And msgfmt finds its ITS data
+    # through GETTEXTDATADIR.
+    #
+    # So record all three in the depdb. Maybe the last one looks
+    # redundant with $its and $loc above, but those prerequisites tell
+    # us when the files change, not which gettext data directory msgfmt
+    # was actually told to search.
+    #
+    depdb string "$msgfmt_version"
+    depdb string "$lang"
+    depdb env GETTEXTDATADIR
+
+    diag msgfmt $>
+
+    # Now run msgfmt with strings.html as the XML template and this
+    # language's catalogue as the source of replacement text. The result
+    # is another XML fragment which www/buildfile will read when it gets
+    # to the release rows for the corresponding page.
+    #
+    # For a completed page we do some cleanup after msgfmt has
+    # serialized it. Note that this file is an intermediate input to
+    # another rule and that rule is quite happy to consume msgfmt's
+    # output as-is. So for now just keep exactly what msgfmt writes.
+    #
+    env "GETTEXTDATADIR=$gettextdatadir" -- \
+      $msgfmt --xml -L iw4x --replace-text "--template=$path($<[0])" \
+              --locale=$lang "--output-file=$path($>)" $path($<[1])
+  }}
+}
+
 # Make the generated template part of the default build.
 #
 # It isn't needed as an installed website file. Building it here is
@@ -181,4 +255,5 @@ alias{update-po}: pot{iw4x} $catalogues
 # default target as well. This gives build2 the complete
 # translation-side dependency graph from the directory root.
 #
-./: pot{iw4x} $catalogues $its $loc file{LINGUAS POTFILES}
+./: pot{iw4x} $catalogues $its $loc $strings $strings_pages \
+    file{LINGUAS POTFILES}

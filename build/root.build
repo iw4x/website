@@ -46,6 +46,7 @@ config.environment GETTEXTDATADIR
 config.environment SSL_CERT_DIR SSL_CERT_FILE CURL_CA_BUNDLE http_proxy https_proxy no_proxy
 
 source $src_root/upstream/tailwind/tailwind.build
+source $src_root/upstream/iw4x-client/releases.build
 
 if ($build.mode != 'skeleton')
 {
@@ -62,3 +63,5 @@ if ($build.mode != 'skeleton')
 
 its = file{$src_root/po/its/iw4x.its}
 loc = file{$src_root/po/its/iw4x.loc}
+
+strings = html{$src_root/po/strings}@$out_root/po/

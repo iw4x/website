@@ -10,7 +10,7 @@ serves static files is all it requires.
 
 The English page, `www/index.html`, holds all user-visible text.
 Translations are [GNU gettext](https://www.gnu.org/software/gettext/) PO
-catalogues in `po/`, and translated page are generated from that
+catalogues in `po/`, and translated pages are generated from that
 same English document.
 
 ## Repository layout
@@ -21,13 +21,17 @@ manifest                 package metadata
 build/                   project-wide build system files
 po/                      translations and gettext configuration
   LINGUAS                the languages we publish
-  POTFILES               the pages translatable text is extracted from
+  POTFILES               the files translatable text is extracted from
+  strings.html           the text of the generated release archive rows
   its/                   ITS rules describing what in the HTML is translatable
   <lang>.po              one catalogue per language named in LINGUAS
 tests/                   the test suite
+  releases.json          the release feed the tests use in place of the live one
 upstream/tailwind/       the Tailwind CSS CLI release selection and checksums
+upstream/iw4x-client/    the iw4x-client release feed selection
 www/                     the website sources
   index.html             the English page, and the source of every other page
+  release-row.html       the markup for one row of the release archive
   404.html               the error page, which is not translated
   tailwind.css           the authored stylesheet
   htaccess.in            the Apache configuration template
@@ -63,6 +67,26 @@ catalogue in place of its translatable text. Note that a page depends on
 exactly one catalogue. Editing `fr.po` rebuilds the French page and
 leaves the other languages alone.
 
+The release archive at the bottom of the page is not authored.
+`www/index.html` carries the section and a marker where the rows belong.
+`curl` writes the release feed of `iw4x/iw4x-client` to
+`www/releases.json` and the build reads it with build2's JSON support.
+Drafts and prereleases are skipped, and the five most recent releases
+that remain become rows, each linking the `iw4x.dll` of its release. A
+release without that asset links its release page instead.
+
+`www/release-row.html` holds the markup for one row. Tailwind scans it
+alongside the two pages, so the classes a row uses reach the stylesheet.
+Its text comes from `po/strings.html` and is translated like the rest
+of the page.
+The French page writes `6 septembre 2026`.
+
+A configuration acquires the feed once and then keeps it, so an
+incremental build needs no network and repeated builds work from the
+same releases. A deployment starts from an empty output directory and so
+always fetches. Supply the feed yourself through
+`config.iw4x_website.releases` when the machine has no network access.
+
 `sitemap.xml`, `robots.txt` and `.htaccess` are generated from
 `po/LINGUAS` together with the configured origin. This is why a new
 language needs little beyond its catalogue. The sitemap entries and the
@@ -74,16 +98,16 @@ server's language-prefix rules follow from that one list.
 |----------------------------------------------------------------------|---------------------------------------------------------------------|
 | [build2 toolchain](https://build2.org/install.xhtml) 0.18.0 or later | provides `b`, `bpkg` and `bdep`                                     |
 | GNU gettext 0.23 or later                                            | `xgettext`, `msgfmt`, `msgmerge`; `msginit` to start a new language |
-| `curl`                                                               | to acquire the Tailwind CSS CLI                                     |
-| network access to `github.com`                                       | likewise, unless you supply the CLI yourself                        |
+| `curl`                                                               | to acquire the Tailwind CSS CLI and the release feed                |
+| network access to `github.com` and `api.github.com`                  | likewise, unless you supply the CLI and the feed yourself           |
 | `xmllint` (libxml2), optional                                        | enables the well-formedness checks in the test suite                |
 
 Note that gettext version matters. `msgfmt --replace-text` arrived in 0.23,
 and the same release changed how escaping is handled between `xgettext`
 and `msgfmt`. An older gettext will not build this site correctly.
 
-Note also that our build recipe acquires the Tailwind CSS CLI by
-itself. Nothing else needs installing.
+Note also that the build acquires the Tailwind CSS CLI by itself.
+Nothing else needs installing.
 
 ## Building
 
@@ -184,6 +208,16 @@ agree with `LINGUAS`. No published page carries scripting. Every
 internal link resolves to a file that was installed. A distribution of
 the project rebuilds to the same site as a checkout.
 
+`tests/releases.json` stands in for the live feed. It gives the suite a
+fixed set of releases to check and keeps it off the network. Drafts and
+prereleases do not appear in the archive, nor do releases beyond the
+configured row count. A release without the configured asset links its
+release page. A tag or a URL from the feed is escaped before it reaches
+the page. A translated page writes its dates and button labels in its
+own language. The build stops on a feed that is not a release list, on a
+feed with no releases to publish and on a release whose `published_at`
+is not a date.
+
 Point the build at `xmllint` to also check that the generated pages and
 the sitemap are well formed:
 
@@ -220,24 +254,45 @@ This produces a source archive directory holding the authored files. The
 test suite uses it to verify that a distribution rebuilds to the same
 site as a checkout.
 
+### Refreshing the release archive
+
+A configuration keeps the release feed it first acquired, so its archive
+can fall behind what `iw4x-client` has published. An explicit target
+replaces the feed, since an ordinary build never goes back to the
+network for it:
+
+```
+$ b 'www/alias{update-releases}'
+$ b
+```
+
+The first command replaces `www/releases.json`. The second sees that its
+prerequisite changed and rebuilds the pages made from it.
+
 ### Configuration variables
 
 Pass these to `bdep init`/`b configure:`, or to any later `b` command to
 change them for that build.
 
-| Variable                                | Default           | Purpose                                                                                                                                              |
-|-----------------------------------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `config.iw4x_website.url`               | `https://iw4x.io` | The origin every generated URL is written with. Set it when building for staging.                                                                    |
-| `config.iw4x_website.tailwind`          | *(none)*          | Path to a Tailwind CSS CLI to use in place of a download.                                                                                            |
-| `config.iw4x_website.tailwind.checksum` | *(none)*          | The expected SHA256 of that CLI. Required with the above, and when overriding the version.                                                           |
-| `config.iw4x_website.tailwind.version`  | `4.3.3`           | The Tailwind release to acquire. Changing it requires a checksum, since the ones in `upstream/tailwind/tailwind.build` belong to the pinned version. |
-| `config.iw4x_website.tailwind.url`      | GitHub releases   | The base URL the release artifact is downloaded from.                                                                                                |
-| `config.iw4x_website.xmllint`           | *(none)*          | Path to `xmllint`. Enables the well-formedness tests.                                                                                                |
-| `config.iw4x_website.curl`              | `curl`            |                                                                                                                                                      |
-| `config.iw4x_website.chmod`             | `chmod`           |                                                                                                                                                      |
-| `config.iw4x_website.xgettext`          | `xgettext`        |                                                                                                                                                      |
-| `config.iw4x_website.msgfmt`            | `msgfmt`          |                                                                                                                                                      |
-| `config.iw4x_website.msgmerge`          | `msgmerge`        |                                                                                                                                                      |
+| Variable                                  | Default                  | Purpose                                                                                                                                              |
+|-------------------------------------------|--------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `config.iw4x_website.url`                 | `https://iw4x.io`        | The origin every generated URL is written with. Set it when building for staging.                                                                    |
+| `config.iw4x_website.tailwind`            | *(none)*                 | Path to a Tailwind CSS CLI to use in place of a download.                                                                                            |
+| `config.iw4x_website.tailwind.checksum`   | *(none)*                 | The expected SHA256 of that CLI. Required with the above, and when overriding the version.                                                           |
+| `config.iw4x_website.tailwind.version`    | `4.3.3`                  | The Tailwind release to acquire. Changing it requires a checksum, since the ones in `upstream/tailwind/tailwind.build` belong to the pinned version. |
+| `config.iw4x_website.tailwind.url`        | GitHub releases          | The base URL the release artifact is downloaded from.                                                                                                |
+| `config.iw4x_website.releases`            | *(none)*                 | Path to a release feed to read in place of a request to the API. Use it to build without network access, or to pin the archive.                      |
+| `config.iw4x_website.releases.repository` | `iw4x/iw4x-client`       | The repository whose releases the archive lists.                                                                                                     |
+| `config.iw4x_website.releases.count`      | `5`                      | How many rows the archive shows.                                                                                                                     |
+| `config.iw4x_website.releases.asset`      | `iw4x.dll`               | The asset a row's download button links to. A release without it links its release page instead.                                                     |
+| `config.iw4x_website.releases.url`        | `https://api.github.com` | The API origin. Set it for GitHub Enterprise, or for a caching proxy.                                                                                |
+| `config.iw4x_website.releases.netrc`      | *(none)*                 | Path to a netrc file for an authenticated request. Worth setting in CI, where the unauthenticated rate limit is shared.                              |
+| `config.iw4x_website.xmllint`             | *(none)*                 | Path to `xmllint`. Enables the well-formedness tests.                                                                                                |
+| `config.iw4x_website.curl`                | `curl`                   |                                                                                                                                                      |
+| `config.iw4x_website.chmod`               | `chmod`                  |                                                                                                                                                      |
+| `config.iw4x_website.xgettext`            | `xgettext`               |                                                                                                                                                      |
+| `config.iw4x_website.msgfmt`              | `msgfmt`                 |                                                                                                                                                      |
+| `config.iw4x_website.msgmerge`            | `msgmerge`               |                                                                                                                                                      |
 
 For example, to build against a Tailwind CLI you already have:
 
@@ -258,8 +313,9 @@ before you submit it.
 
 ### What is translatable
 
-`po/its/iw4x.its` holds the rules. The translatable text is the element
-text in the body of `www/index.html` together with the page title.
+`po/its/iw4x.its` holds the rules and `po/POTFILES` names the files they
+are applied to. The translatable text is the element text in the body of
+those files together with the page title.
 
 Text that a reader sees lives in element text. Note that `msgfmt`
 replaces element text and leaves attribute values alone, so an
@@ -271,6 +327,22 @@ description in `<meta name="description">`.
 An element marked `translate="no"` carries a name and stays as it is.
 The IW4x wordmark and `x86` are marked this way. Inline SVG is excluded
 as well, since the icons carry no text.
+
+`po/strings.html` is the second translation input named in `POTFILES`.
+It holds the text used by the generated release rows, which have no
+authored copy in `www/index.html`. The file is never served. The build
+finds each string by its `id`, and the test suite checks that those ids
+stay in sync with the ones the build uses.
+
+`release-date` is a format string. The build replaces `{year}`,
+`{month}` and `{day}` with the corresponding parts of the release date.
+Translate the pattern by arranging those fields in the order used by the
+language. For example, German may use `{day}. {month} {year}`.
+
+The twelve `release-month-NN` strings provide the value substituted for
+`{month}`. Use the form of the month name that belongs in a date, since
+some languages use a different form there from the one used when naming
+the month by itself.
 
 `www/404.html` is served outside the language directories and is not
 translated.

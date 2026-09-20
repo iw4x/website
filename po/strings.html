@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+
+<!--
+  The release archive is a little different from the rest of the page.
+  Most text in www/index.html is known when we write the page and can
+  therefore go through gettext in the usual way. The release rows are
+  assembled later, at build time, from the iw4x-client release feed. By
+  then there is no authored markup containing strings such as the date
+  or the button labels for gettext to extract.
+
+  So we keep those strings here.
+
+  This file is translation input in much the same way as www/index.html.
+  It is listed in POTFILES and its text is extracted into the message
+  template along with the rest of the site. Then, for each language,
+  po/buildfile runs msgfmt over it and produces a translated copy.
+  www/buildfile reads that copy when constructing the corresponding
+  release rows.
+
+  Note that the resulting document is an intermediate build artifact.
+  There is no URL for it and it is never installed as a page. What we
+  want from it is simply a convenient piece of structured text that
+  gettext already knows how to translate and that the release generation
+  code can read afterwards.
+
+  This is, for example, how a date generated from the release feed can
+  become "6 septembre 2026" on the French page. The feed gives us the
+  date itself. This document gives us the translated month name and
+  tells us how the pieces of that date are arranged in the language we
+  are building.
+
+  Now, www/buildfile still needs some stable way to ask for each of
+  these strings. We use the element ids for that purpose. In other
+  words, ids such as release-date and release-month-09 are part of the
+  small interface between this file and www/buildfile, not incidental
+  markup. Keep them in sync with the build logic. The testscript checks
+  this interface so that adding, removing, or renaming one on either
+  side does not quietly leave a generated release row with missing text.
+-->
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <title translate="no">Release archive strings</title>
+  </head>
+
+  <body>
+    <!--
+      This is the pattern used to turn a release date into text.
+
+      The three fields are substituted by www/buildfile after
+      translation. {year} is the release year, {month} is the translated
+      month name selected from the entries below, and {day} is the day
+      of the month written without a leading zero.
+
+      There is a perhaps slightly non-obvious reason for translating the
+      whole pattern instead of assembling a fixed "month day year"
+      sequence in the buildfile. The order and punctuation belong to the
+      language. A translator can move the fields to the positions
+      expected by that language without having to encode any
+      locale-specific date rules in the build logic.
+
+      For example, the English pattern below produces "September 6,
+      2026". German can translate it as "{day}. {month} {year}" and get
+      the expected ordering from the same three values.
+
+      Note that the field names themselves are part of the substitution
+      protocol. They should be moved as necessary, but left intact so
+      that www/buildfile can still recognize and replace them.
+    -->
+    <p id="release-date">{month} {day}, {year}</p>
+
+    <!--
+      These are the month names substituted for {month} in the pattern
+      above.
+
+      The numeric suffix deliberately matches the month number from the
+      release date, which lets www/buildfile select the translated
+      string directly without carrying a second mapping between feed
+      values and element names.
+
+      Note that some languages change the form of a month name when it
+      appears as part of a date. In such a translation, use the form
+      that belongs in release-date. We never use these strings as
+      standalone names, so the date form is the one this interface
+      represents.
+
+      For example, release-month-09 means "the word used for September
+      in a release date", not necessarily "the standalone name of the
+      ninth month".
+    -->
+    <p id="release-month-01">January</p>
+    <p id="release-month-02">February</p>
+    <p id="release-month-03">March</p>
+    <p id="release-month-04">April</p>
+    <p id="release-month-05">May</p>
+    <p id="release-month-06">June</p>
+    <p id="release-month-07">July</p>
+    <p id="release-month-08">August</p>
+    <p id="release-month-09">September</p>
+    <p id="release-month-10">October</p>
+    <p id="release-month-11">November</p>
+    <p id="release-month-12">December</p>
+
+    <!--
+      Finally, these are the labels used for the actions attached to
+      each generated release row.
+
+      release-changelog labels the link to that release's notes on
+      GitHub. release-download labels the link that downloads the client
+      build for the release.
+
+      Like the date strings above, these live here simply since the
+      links themselves do not exist in the authored page. www/buildfile
+      creates them from the release feed and picks up the translated
+      labels by id at the same time.
+    -->
+    <p id="release-changelog">Changelog</p>
+    <p id="release-download">Download</p>
+  </body>
+</html>

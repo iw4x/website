@@ -1,0 +1,20 @@
+<li class="grid gap-x-8 gap-y-4 border-b border-rule py-6 sm:grid-cols-[10rem_1fr] sm:items-center">
+  <p class="min-w-0">
+    <span translate="no" class="block text-base font-semibold tracking-body text-foreground">@tag@</span>
+    <time datetime="@date@" class="block text-base tracking-body text-muted">@date-text@</time>
+  </p>
+
+  <div class="flex flex-wrap gap-3 sm:justify-end">
+    <a
+      href="@notes-url@"
+      class="inline-flex min-h-11 items-center justify-center border border-border bg-transparent px-4 text-base font-semibold tracking-body text-foreground transition-[color,background-color,border-color] duration-150 ease-out hover:border-foreground hover:bg-surface active:border-foreground active:bg-surface"
+      >@notes-text@</a
+    >
+
+    <a
+      href="@download-url@"
+      class="inline-flex min-h-11 items-center justify-center border border-accent-edge bg-accent px-4 text-base font-semibold tracking-body text-accent-ink transition-[color,background-color,border-color] duration-150 ease-out hover:bg-accent-hover active:bg-accent-active"
+      >@download-text@</a
+    >
+  </div>
+</li>

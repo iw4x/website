@@ -1,0 +1,180 @@
+# The release archive is a little different from most of the content in
+# www/index.html. The page itself is authored here in the repository,
+# but the list of releases belongs to iw4x-client and changes
+# independently of the website. Keeping the rows in index.html would
+# mean updating the website each time a client release is published,
+# which is really the wrong dependency.
+#
+# So what we do instead is obtain the release history from GitHub and
+# turn the part we are interested in into markup as part of the build.
+# This still gives us a completely static website once installed, which
+# is particularly useful here since the site deliberately has no
+# client-side scripting (and the testscript checks that this remains the
+# case).
+#
+# Most of what follows is then just the configuration needed to describe
+# that request. www/buildfile does the actual fetching and generates the
+# rows. This is much the same arrangement as the Tailwind setup where
+# upstream/tailwind/tailwind.build describes the artifact and
+# www/buildfile takes care of acquiring it.
+#
+
+# Start with the repository whose release history we are going to
+# publish.
+#
+# It may be tempting to make this a plain variable since the official
+# site normally has no reason to look anywhere except iw4x/iw4x-client.
+# Making it configurable is useful for a staging build, though, where we
+# may want to exercise the complete archive generation against some
+# other repository without making requests for the real project.
+#
+config [string] config.iw4x_website.releases.repository ?= 'iw4x/iw4x-client'
+
+releases_repository = $config.iw4x_website.releases.repository
+
+# Keep the API origin separate from the repository path. github.com
+# itself is not necessarily the service we have to talk to here. For
+# example, a GitHub Enterprise installation has its own API origin and
+# CI may reasonably put a caching proxy in front of api.github.com.
+#
+# Having the origin as a configuration value means the rest of the
+# request can stay exactly the same in all of these cases.
+#
+config [string] config.iw4x_website.releases.url ?= 'https://api.github.com'
+
+releases_url = $config.iw4x_website.releases.url
+
+# This is the number of releases that eventually appear in the archive.
+# It is worth checking zero here instead of letting the generation
+# recipe deal with an empty result later. An empty archive is not a
+# useful configuration for this page and, more subtly, zero would make
+# the amount of feed data requested below zero as well.
+#
+config [uint64] config.iw4x_website.releases.count ?= 5
+
+releases_count = $config.iw4x_website.releases.count
+
+if ($releases_count == 0)
+  fail "config.iw4x_website.releases.count is 0; the release archive needs \
+at least one row"
+
+# Each archive row normally points straight at this asset in the
+# corresponding release. We cannot assume that every release has it,
+# though. Old releases, partially published releases, or a repository
+# used for testing may have a different set of assets.
+#
+# So absence of this asset does not make the release unusable.
+# www/buildfile still emits the row and uses the release page as its
+# target in that case.
+#
+config [string] config.iw4x_website.releases.asset ?= 'iw4x.dll'
+
+releases_asset = $config.iw4x_website.releases.asset
+
+# There are two useful ways of obtaining the feed. A normal build
+# fetches it from the API described above. For a reproducible test, and
+# occasionally for an offline build, we already have the response and
+# want the build to use that file verbatim.
+#
+# This variable names such a file. If it is null, www/buildfile performs
+# the request. If it names a file, the acquisition rule becomes a copy.
+# The latter is what the testscript uses so that its expected archive
+# does not depend on the current state of GitHub.
+#
+# Note that this follows the same convention as
+# config.iw4x_website.tailwind. In both cases the configuration can
+# replace a network acquisition with a local artifact without changing
+# anything that consumes the acquired file.
+#
+config [path] config.iw4x_website.releases ?= [null]
+
+releases_snapshot = $config.iw4x_website.releases
+
+# GitHub permits unauthenticated access to the release API, which is
+# normally enough for a developer building the site. The unauthenticated
+# rate limit is shared by address, though, and this starts to matter on
+# CI hosts where many unrelated jobs may leave through the same address.
+#
+# Allow curl to use a netrc file for that case. In particular, do not
+# take the token itself as a build configuration value. Configuration
+# values are normal build state and may end up in config.build or
+# diagnostics. A netrc path lets curl read the credentials directly,
+# leaving the secret outside the build state.
+#
+config [path] config.iw4x_website.releases.netrc ?= [null]
+
+releases_netrc = $config.iw4x_website.releases.netrc
+
+# Now work out how much of the release feed we should ask GitHub for.
+# The number above is the number of rows we want after filtering, which
+# is not necessarily the number of releases we need to inspect. In
+# particular, prereleases are discarded by www/buildfile, and
+# authenticated requests may expose drafts that are discarded there as
+# well.
+#
+# Asking for exactly $releases_count entries could then leave the
+# archive short. There is no particularly meaningful exact number to use
+# here, so give ourselves a modest margin and ask for four times the
+# final row count.
+#
+# Note that the repeated additions are intentional. There is no
+# multiplication operator in the buildfile language, and spelling this
+# out leaves the value and its reason fairly obvious.
+#
+releases_page = $releases_count
+releases_page += $releases_count
+releases_page += $releases_count
+releases_page += $releases_count
+
+# GitHub caps per_page at 100, so clamp our margin at the API boundary.
+# This still lets releases_count describe the archive independently of
+# the details of the request we use to populate it.
+#
+if ($releases_page > 100)
+  releases_page = 100
+
+# At this point we have all the pieces of the request. Keep the complete
+# URL in a variable since both the normal acquisition rule and the
+# explicit refresh operation in www/buildfile have to fetch exactly the
+# same feed.
+#
+releases_api_url = \
+  "$releases_url/repos/$releases_repository/releases?per_page=$releases_page"
+
+# These options are the other half of that shared request. In
+# particular, the update-releases operation must behave exactly like the
+# acquisition rule or a snapshot refreshed by one path could differ from
+# a feed fetched by the other.
+#
+# Treat an HTTP error as a failed build step. curl normally considers
+# the HTTP transaction itself successful and can exit with zero after
+# receiving an error response. Some GitHub error responses are perfectly
+# valid JSON, which would let the failure travel much further into the
+# generation recipe before we noticed that what we downloaded was not a
+# release list.
+#
+# The remaining options keep the request quiet on success, preserve
+# useful diagnostics on failure, follow redirects, retry transient
+# failures, and pin the GitHub API contract used by this build.
+#
+releases_curl_options = --fail --silent --show-error --location --retry 3 \
+  --header 'Accept: application/vnd.github+json'                          \
+  --header 'X-GitHub-Api-Version: 2022-11-28'
+
+# Add authentication only when a credentials file was configured. In
+# particular, leaving the variable null should result in an ordinary
+# unauthenticated curl invocation with no dependency on a developer's
+# local credential setup.
+#
+if ($releases_netrc != [null])
+  releases_curl_options += --netrc-file "$releases_netrc"
+
+# Finally expose the useful part of this configuration in the
+# configuration report. The complete API URL makes it possible to see
+# the actual request, and the remaining values explain which repository
+# is being presented and how the resulting archive will be shaped.
+#
+config [config.report] releases_api_url
+config [config.report] releases_repository
+config [config.report] releases_count
+config [config.report] releases_asset

@@ -1,0 +1,103 @@
+[
+  {
+    "tag_name": "r9005",
+    "draft": true,
+    "prerelease": false,
+    "published_at": "2026-12-26T09:00:00Z",
+    "html_url": "https://github.com/iw4x/iw4x-client/releases/tag/r9005",
+    "assets": [
+      {
+        "name": "iw4x.dll",
+        "browser_download_url": "https://github.com/iw4x/iw4x-client/releases/download/r9005/iw4x.dll"
+      }
+    ]
+  },
+  {
+    "tag_name": "r9004",
+    "draft": false,
+    "prerelease": true,
+    "published_at": "2026-12-25T09:00:00Z",
+    "html_url": "https://github.com/iw4x/iw4x-client/releases/tag/r9004",
+    "assets": [
+      {
+        "name": "iw4x.dll",
+        "browser_download_url": "https://github.com/iw4x/iw4x-client/releases/download/r9004/iw4x.dll"
+      }
+    ]
+  },
+  {
+    "tag_name": "r9003",
+    "draft": false,
+    "prerelease": false,
+    "published_at": "2026-12-24T09:00:00Z",
+    "html_url": "https://github.com/iw4x/iw4x-client/releases/tag/r9003",
+    "assets": [
+      {
+        "name": "iw4x.pdb",
+        "browser_download_url": "https://cdn.example.org/get?file=iw4x.pdb&release=r9003"
+      },
+      {
+        "name": "iw4x.dll",
+        "browser_download_url": "https://cdn.example.org/get?file=iw4x.dll&release=r9003"
+      }
+    ]
+  },
+  {
+    "tag_name": "r9002",
+    "draft": false,
+    "prerelease": false,
+    "published_at": "2026-11-03T09:00:00Z",
+    "html_url": "https://github.com/iw4x/iw4x-client/releases/tag/r9002",
+    "assets": []
+  },
+  {
+    "tag_name": "r<&9001>",
+    "published_at": "2026-06-08T09:00:00Z",
+    "html_url": "https://github.com/iw4x/iw4x-client/releases/tag/r9001",
+    "assets": [
+      {
+        "name": "iw4x.dll",
+        "browser_download_url": "https://github.com/iw4x/iw4x-client/releases/download/r9001/iw4x.dll"
+      }
+    ]
+  },
+  {
+    "tag_name": "r9000",
+    "draft": false,
+    "prerelease": false,
+    "published_at": "2026-06-07T09:00:00Z",
+    "html_url": "https://github.com/iw4x/iw4x-client/releases/tag/r9000",
+    "assets": [
+      {
+        "name": "iw4x.dll",
+        "browser_download_url": "https://github.com/iw4x/iw4x-client/releases/download/r9000/iw4x.dll"
+      }
+    ]
+  },
+  {
+    "tag_name": "r8999",
+    "draft": false,
+    "prerelease": false,
+    "published_at": "2026-01-01T09:00:00Z",
+    "html_url": "https://github.com/iw4x/iw4x-client/releases/tag/r8999",
+    "assets": [
+      {
+        "name": "iw4x.dll",
+        "browser_download_url": "https://github.com/iw4x/iw4x-client/releases/download/r8999/iw4x.dll"
+      }
+    ]
+  },
+  {
+    "tag_name": "r8998",
+    "draft": false,
+    "prerelease": false,
+    "published_at": "2025-12-31T09:00:00Z",
+    "html_url": "https://github.com/iw4x/iw4x-client/releases/tag/r8998",
+    "assets": [
+      {
+        "name": "iw4x.dll",
+        "browser_download_url": "https://github.com/iw4x/iw4x-client/releases/download/r8998/iw4x.dll"
+      }
+    ]
+  }
+]

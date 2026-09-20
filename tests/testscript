@@ -32,15 +32,16 @@
     sed -n -e 's%^@source "\./(.+)";$%\1%p' $project_src/www/tailwind.css >>EOO
     index.html
     404.html
+    release-row.html
     EOO
 
-    sed -n -e 's%^tailwind_scan = html\{(.+)\}$%\1%p' \
-      $project_src/www/buildfile >'index 404'
+    sed -n -e 's%^tailwind_scan = (.+)$%\1%p' $project_src/www/buildfile \
+      >'html{index 404} file{release-row.html}'
   }
 
   : no-scripting
   :
-  for f: index.html 404.html
+  for f: index.html 404.html release-row.html
   {
     sed -n -e 's%.*(<script).*%\1%p' $project_src/www/$f
     sed -n -e 's%.*( on[a-z]+=").*%\1%p' $project_src/www/$f
@@ -50,6 +51,74 @@
   : no-translatable-attributes
   :
   sed -n -e 's%.*(aria-label=).*%\1%p' $project_src/www/index.html
+
+  : the-page-has-somewhere-to-put-the-archive
+  :
+  {
+    sed -n -e 's%^ *(<!--@releases@-->)$%\1%p' $project_src/www/index.html \
+      >'<!--@releases@-->'
+
+    sed -n -e 's%.*<!--@releases@-->.*%found%p' $project_src/www/index.html \
+      >'found'
+  }
+
+  : the-row-uses-the-placeholders-the-build-fills
+  :
+  {
+    for p: @tag@ @date@ @date-text@ @notes-url@ @notes-text@ \
+           @download-url@ @download-text@
+    {
+      sed -n -e "s%.*$p.*%found%p" $project_src/www/release-row.html >'found'
+      sed -n -e "s%.*$p.*%found%p" $project_src/www/buildfile >'found'
+    }
+
+    sed -e 's%@tag@%%g'           \
+        -e 's%@date-text@%%g'     \
+        -e 's%@date@%%g'          \
+        -e 's%@notes-url@%%g'     \
+        -e 's%@notes-text@%%g'    \
+        -e 's%@download-url@%%g'  \
+        -e 's%@download-text@%%g' \
+        $project_src/www/release-row.html | \
+      sed -n -e 's%.*(@[a-z-]+@).*%\1%p'
+  }
+
+  : the-archive-text-has-every-string-the-build-looks-up
+  :
+  {
+    sed -n -e 's%^ *<p id="([a-z0-9-]+)">.*</p>$%\1%p' \
+      $project_src/po/strings.html >>EOO
+    release-date
+    release-month-01
+    release-month-02
+    release-month-03
+    release-month-04
+    release-month-05
+    release-month-06
+    release-month-07
+    release-month-08
+    release-month-09
+    release-month-10
+    release-month-11
+    release-month-12
+    release-changelog
+    release-download
+    EOO
+
+    sed -n -e 's%^ *<p id="release-date">.*[{]year[}].*</p>$%found%p' \
+      $project_src/po/strings.html >'found'
+
+    sed -n -e 's%^ *<p id="release-date">.*[{]month[}].*</p>$%found%p' \
+      $project_src/po/strings.html >'found'
+
+    sed -n -e 's%^ *<p id="release-date">.*[{]day[}].*</p>$%found%p' \
+      $project_src/po/strings.html >'found'
+  }
+
+  : the-archive-text-is-a-translation-input
+  :
+  sed -n -e 's%^(po/strings\.html)$%\1%p' $project_src/po/POTFILES \
+    >'po/strings.html'
 }}
 
 : build
@@ -62,6 +131,7 @@
   +$* 'configure:' $project_src/@$out/                        \
      "config.iw4x_website.tailwind=$tailwind"                 \
      "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+     "config.iw4x_website.releases=$releases"                 \
      &$out/*** >! 2>!
 
   +$* $out/ >! 2>!
@@ -90,6 +160,97 @@
     for l: $linguas
       test -f $site/$l/index.html
   }
+
+  : release-archive
+  :
+  {{
+    page = $site/en/index.html
+
+    : has-one-row-per-published-release
+    :
+    {
+      sed -n -e 's%.*(<li class="grid gap-x-8).*%row%p' $page >>EOO
+      row
+      row
+      row
+      row
+      row
+      EOO
+
+      sed -n -e 's%.*(@releases@).*%\1%p' $page
+    }
+
+    : names-the-releases-in-feed-order
+    :
+    {
+      sed -n -e 's%.*<span translate="no" [^>]*>(r[^<]*)</span>.*%\1%p' \
+        $page >>EOO
+      r9003
+      r9002
+      r&lt;&amp;9001&gt;
+      r9000
+      r8999
+      EOO
+    }
+
+    : leaves-out-drafts-prereleases-and-anything-past-the-row-count
+    :
+    {
+      for t: r9005 r9004 r8998
+        sed -n -e "s%.*($t).*%\1%p" $page
+    }
+
+    : writes-each-date-twice-once-for-machines-and-once-for-people
+    :
+    {
+      sed -n -e 's%.*datetime="([0-9-]+)".*%\1%p' $page >>EOO
+      2026-12-24
+      2026-11-03
+      2026-06-08
+      2026-06-07
+      2026-01-01
+      EOO
+
+      sed -n -e 's%.*>([A-Z][a-z]+ [0-9]+, [0-9]{4}).*%\1%p' $page >>EOO
+      December 24, 2026
+      November 3, 2026
+      June 8, 2026
+      June 7, 2026
+      January 1, 2026
+      EOO
+    }
+
+    : links-the-configured-asset
+    :
+    sed -n -e 's%.*href="(https://cdn\.example\.org/[^"]+)".*%\1%p' $page \
+      >'https://cdn.example.org/get?file=iw4x.dll&amp;release=r9003'
+
+    : falls-back-to-the-release-page-when-the-asset-is-missing
+    :
+    {
+      sed -n -e 's%.*href="(https://github\.com/iw4x/iw4x-client/releases/tag/r9002)".*%\1%p' \
+        $page >>EOO
+      https://github.com/iw4x/iw4x-client/releases/tag/r9002
+      https://github.com/iw4x/iw4x-client/releases/tag/r9002
+      EOO
+    }
+
+    : escapes-what-it-takes-from-the-feed
+    :
+    {
+      sed -n -e 's%.*(<span translate="no" [^>]*>r<).*%\1%p' $page
+      sed -n -e 's%.*href="[^"]*[?][^"]*&[^a][^"]*".*%found%p' $page
+    }
+
+    : is-not-served-the-archive-text-or-the-row-markup
+    :
+    {
+      test -f $site/release-row.html == 1
+      test -f $site/strings.html == 1
+      test -f $site/en/strings.html == 1
+      test -f $site/releases.json == 1
+    }
+  }}
 
   : nothing-is-generated-into-the-source-tree
   :
@@ -173,6 +334,8 @@
     sed -n -e 's%.*[.]text-heading[{][^}]*line-height[^}]*[}].*%found%p' \
       $site/site.css >'found'
 
+    sed -n -e 's%.*(10rem_1fr).*%\1%p' $site/site.css >'10rem_1fr'
+
     for l: en $linguas
       sed -n -e 's%.*<link rel="stylesheet" href="([^"]+)" ?/>.*%\1%p' \
         $site/$l/index.html >'../site.css'
@@ -251,7 +414,9 @@
 : translation
 :
 {{
-  +$* 'configure:' $project_src/@$~/cfg/ &$~/cfg/*** >! 2>!
+  +$* 'configure:' $project_src/@$~/cfg/       \
+     "config.iw4x_website.releases=$releases" \
+     &$~/cfg/*** >! 2>!
 
   +$* 'dist:' $~/cfg/ "config.dist.root=$~/dist" config.dist.uncommitted=true \
      &$~/dist/*** >! 2>!
@@ -276,6 +441,27 @@
 
     msgid "IW4x on Discord"
     msgstr "ZZ DISCORD"
+
+    msgid "{month} {day}, {year}"
+    msgstr "{day}. {month} {year}"
+
+    msgid "January"
+    msgstr "ZZ-Januar"
+
+    msgid "June"
+    msgstr "ZZ-Juni"
+
+    msgid "November"
+    msgstr "ZZ-November"
+
+    msgid "December"
+    msgstr "ZZ-Dezember"
+
+    msgid "Changelog"
+    msgstr "ZZ-CHANGELOG"
+
+    msgid "Download"
+    msgstr "ZZ-DOWNLOAD"
     EOI
 
     echo zz >=src/po/LINGUAS
@@ -283,6 +469,7 @@
     $* 'configure:' $~/src/@$~/out/                             \
        "config.iw4x_website.tailwind=$tailwind"                 \
        "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
        &$~/out/*** >! 2>!
 
     $* $~/out/ >! 2>!
@@ -305,6 +492,25 @@
 
     sed -n -e 's%.*<dt translate="no" [^>]*>(x86)</dt>.*%\1%p' $page >'x86'
 
+    sed -n -e 's%.*>([0-9]+\. ZZ-[A-Za-z]+ [0-9]{4}).*%\1%p' $page >>EOO
+    24. ZZ-Dezember 2026
+    3. ZZ-November 2026
+    8. ZZ-Juni 2026
+    7. ZZ-Juni 2026
+    1. ZZ-Januar 2026
+    EOO
+
+    sed -n -e 's%.*>(ZZ-CHANGELOG).*%\1%p' $page >>EOO
+    ZZ-CHANGELOG
+    ZZ-CHANGELOG
+    ZZ-CHANGELOG
+    ZZ-CHANGELOG
+    ZZ-CHANGELOG
+    EOO
+
+    sed -n -e 's%.*<span translate="no" [^>]*>(r8999)</span>.*%\1%p' \
+      $page >'r8999'
+
     sed -n -e 's%^(<!DOCTYPE html>)$%\1%p' $page >'<!DOCTYPE html>'
     sed -n -e 's%^(<[?]xml).*%\1%p' $page
     sed -n -e 's%^[^<].*( xml:lang=").*%\1%p' $page
@@ -314,7 +520,9 @@
 : dependency-tracking
 :
 {{
-  +$* 'configure:' $project_src/@$~/cfg/ &$~/cfg/*** >! 2>!
+  +$* 'configure:' $project_src/@$~/cfg/       \
+     "config.iw4x_website.releases=$releases" \
+     &$~/cfg/*** >! 2>!
 
   +$* 'dist:' $~/cfg/ "config.dist.root=$~/dist" config.dist.uncommitted=true \
      &$~/dist/*** >! 2>!
@@ -346,6 +554,7 @@
     $* 'configure:' $~/src/@$~/out/                             \
        "config.iw4x_website.tailwind=$tailwind"                 \
        "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
        &$~/out/*** >! 2>!
 
     $* $~/out/ >! 2>!
@@ -353,7 +562,8 @@
     sed -i -e 's%^msgstr "PLACEHOLDER TAGLINE"$%msgstr "zz CHANGED"%' src/po/zz.po
 
     $* $~/out/ 2>>~%EOE%
-      %msgfmt .+zz.html\{index\}%
+      %msgfmt .+po/zz/html\{strings\}%
+      %gen .+www/zz/html\{index\}%
       EOE
 
     sed -n -e 's%.*(zz CHANGED).*%\1%p' $~/out/www/zz/index.html >'zz CHANGED'
@@ -367,6 +577,7 @@
     $* 'configure:' $~/src/@$~/out/                             \
        "config.iw4x_website.tailwind=$tailwind"                 \
        "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
        &$~/out/*** >! 2>!
 
     $* $~/out/ >! 2>!
@@ -406,6 +617,7 @@
     $* 'configure:' $~/src/@$~/out/                             \
        "config.iw4x_website.tailwind=$tailwind"                 \
        "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
        &$~/out/*** >! 2>!
 
     $* $~/out/ >! 2>!
@@ -430,6 +642,7 @@
     $* 'configure:' $project_src/@$~/out/                       \
        "config.iw4x_website.tailwind=$tailwind"                 \
        "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
        &$~/out/*** >! 2>!
 
     $* $~/out/ >! 2>!
@@ -437,6 +650,7 @@
     test -f $~/out/www/en/index.html
     test -f $~/out/www/site.css
     test -f $~/out/po/iw4x.pot
+    test -f $~/out/www/releases.json
 
     $* 'clean:' $~/out/ >! 2>!
 
@@ -444,6 +658,8 @@
     test -f $~/out/www/site.css == 1
     test -f $~/out/www/sitemap.xml == 1
     test -f $~/out/po/iw4x.pot == 1
+
+    test -f $~/out/www/releases.json == 1
   }
 }}
 
@@ -453,8 +669,9 @@
   : a-wrong-checksum-fails-the-build
   :
   {
-    $* 'configure:' $project_src/@$~/out/       \
-       "config.iw4x_website.tailwind=$tailwind" \
+    $* 'configure:' $project_src/@$~/out/         \
+       "config.iw4x_website.tailwind=$tailwind"   \
+       "config.iw4x_website.releases=$releases"   \
        config.iw4x_website.tailwind.checksum=0000000000000000000000000000000000000000000000000000000000000000 \
        &$~/out/*** >! 2>!
 
@@ -473,6 +690,7 @@
     $* 'configure:' $project_src/@$~/out/                       \
        "config.iw4x_website.tailwind=$tailwind"                 \
        "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
        &$~/out/*** >! 2>!
 
     $* $~/out/ >! 2>!
@@ -492,12 +710,201 @@
 
   : a-new-version-needs-its-own-checksum
   :
-  $* 'configure:' $project_src/@$~/out/ \
+  $* 'configure:' $project_src/@$~/out/       \
+     "config.iw4x_website.releases=$releases" \
      config.iw4x_website.tailwind.version=0.0.0 &?$~/out/*** 2>>~%EOE% != 0
     %.*%*
     %.*checksums in build/tailwind\.build are for.*%
     %.*%*
     EOE
+}}
+
+: release-feed
+:
+{{
+  : an-ordinary-build-does-not-fetch-again
+  :
+  {
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    $* $~/out/ 2>>~%EOE%
+      %info: dir\{.+\} is up to date%
+      EOE
+  }
+
+  : editing-the-configured-feed-rebuilds-the-archive
+  :
+  {
+    cp $releases feed.json
+
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$~/feed.json"              \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    sed -n -e 's%.*(r8999).*%\1%p' $~/out/www/en/index.html >>EOO
+    r8999
+    r8999
+    r8999
+    EOO
+
+    sed -i -e 's%r8999%r7777%g' feed.json
+
+    $* $~/out/ >! 2>!
+
+    sed -n -e 's%.*(r7777).*%\1%p' $~/out/www/en/index.html >>EOO
+    r7777
+    r7777
+    r7777
+    EOO
+  }
+
+  : the-row-count-is-configurable
+  :
+  {
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
+       config.iw4x_website.releases.count=2                     \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    sed -n -e 's%.*(<li class="grid gap-x-8).*%row%p' \
+      $~/out/www/en/index.html >>EOO
+    row
+    row
+    EOO
+  }
+
+  : the-linked-asset-is-configurable
+  :
+  {
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
+       config.iw4x_website.releases.asset=iw4x.pdb              \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    sed -n -e 's%.*href="(https://cdn\.example\.org/[^"]+)".*%\1%p' \
+      $~/out/www/en/index.html \
+      >'https://cdn.example.org/get?file=iw4x.pdb&amp;release=r9003'
+  }
+
+  : an-archive-with-nothing-to-show-fails-the-build
+  :
+  {
+    cat <<EOI >=feed.json
+    [
+      {"tag_name": "r1", "draft": true, "prerelease": false,
+       "published_at": "2026-01-01T00:00:00Z", "html_url": "https://e.invalid/1",
+       "assets": []},
+      {"tag_name": "r2", "draft": false, "prerelease": true,
+       "published_at": "2026-01-02T00:00:00Z", "html_url": "https://e.invalid/2",
+       "assets": []}
+    ]
+    EOI
+
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$~/feed.json"              \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/www/ 2>>~%EOE% != 0
+      %.*%*
+      %.*no releases to publish.*%
+      %.*%*
+      EOE
+  }
+
+  : a-feed-that-is-not-a-release-list-fails-the-build
+  :
+  {
+    cat <<EOI >=feed.json
+    {"message": "API rate limit exceeded", "documentation_url": "https://e.invalid"}
+    EOI
+
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$~/feed.json"              \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/www/ 2>>~%EOE% != 0
+      %.*%*
+      %.*is not a list of releases.*%
+      %.*%*
+      EOE
+  }
+
+  : a-release-missing-its-date-fails-the-build
+  :
+  {
+    cat <<EOI >=feed.json
+    [
+      {"tag_name": "r1", "draft": false, "prerelease": false,
+       "published_at": "yesterday", "html_url": "https://e.invalid/1",
+       "assets": []}
+    ]
+    EOI
+
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$~/feed.json"              \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/www/ 2>>~%EOE% != 0
+      %.*%*
+      %.*release r1 has an unexpected published_at value.*%
+      %.*%*
+      EOE
+  }
+
+  : update-releases-acquires-the-feed-again
+  :
+  {
+    cp $releases feed.json
+
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$~/feed.json"              \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    sed -i -e 's%r8999%r7777%g' feed.json
+
+    $* "$~/out/www/alias{update-releases}" 2>>~%EOE%
+      %curl .+json\{releases\}%
+      %curl .+json\{releases\}%
+      EOE
+
+    $* $~/out/ 2>>~%EOE%
+      %gen .+en/html\{index\}%
+      EOE
+
+    sed -n -e 's%.*(r7777).*%\1%p' $~/out/www/en/index.html >>EOO
+    r7777
+    r7777
+    r7777
+    EOO
+  }
 }}
 
 : distribution
@@ -506,6 +913,7 @@
   +$* 'configure:' $project_src/@$~/cfg/                      \
      "config.iw4x_website.tailwind=$tailwind"                 \
      "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+     "config.iw4x_website.releases=$releases"                 \
      &$~/cfg/*** >! 2>!
 
   +$* $~/cfg/ >! 2>!
@@ -524,13 +932,14 @@
     for f: manifest buildfile README.md LICENSE.md                      \
            build/bootstrap.build build/root.build                       \
            www/buildfile www/index.html www/404.html www/tailwind.css   \
-           www/htaccess.in www/favicon.ico                              \
-           po/buildfile po/LINGUAS po/POTFILES                          \
+           www/htaccess.in www/favicon.ico www/release-row.html         \
+           po/buildfile po/LINGUAS po/POTFILES po/strings.html          \
            po/its/iw4x.its po/its/iw4x.loc                              \
            upstream/tailwind/tailwind.build                             \
+           upstream/iw4x-client/releases.build                          \
            www/inter/buildfile www/inter/latin.woff2                    \
            www/inter/latin-ext.woff2 www/inter/LICENSE                  \
-           tests/buildfile tests/testscript
+           tests/buildfile tests/testscript tests/releases.json
       test -f $authored/$f
 
     for l: $linguas
@@ -539,6 +948,9 @@
     test -f $authored/www/site.css == 1
     test -f $authored/po/iw4x.pot == 1
     test -d $authored/www/en == 1
+
+    test -f $authored/www/releases.json == 1
+    test -d $authored/po/en == 1
 
     test -d $authored/.git == 1
     test -d $authored/.bdep == 1
@@ -553,6 +965,7 @@
     $* 'configure:' $authored/@$~/out/                          \
        "config.iw4x_website.tailwind=$tailwind"                 \
        "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
        &$~/out/*** >! 2>!
 
     $* $~/out/ >! 2>!

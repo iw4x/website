@@ -10,6 +10,11 @@
 # the published site. If we ever find ourselves relying on a generated
 # file left in www/, then we have broken that property.
 
+# The pages below read the release archive text that po/buildfile
+# translates, so that directory has to be loaded before this one.
+#
+include ../po/
+
 # tailwind.build has already selected the Tailwind artifact for this
 # host. At this point we know its URL and checksum, and possibly have a
 # configured local copy. What remains is to turn that selection into an
@@ -148,13 +153,17 @@ tailwind_in = css{tailwind}
 # through @source in tailwind.css and never appear on the command line
 # below. Tailwind knows about them, in other words, but build2 does not.
 #
+# Note that release-row.html is in this set as well. It never becomes a
+# page of its own, but the release archive is built from it and its
+# utility classes have to reach site.css like any others.
+#
 # So list the same files here and make them real prerequisites of
 # site.css. There are now two descriptions of the scan set, which is
 # perhaps easy to get out of sync. Automatic discovery is disabled in
 # tailwind.css and the testscript compares its @source entries with this
 # list, so forgetting one side should be caught fairly quickly.
 #
-tailwind_scan = html{index 404}
+tailwind_scan = html{index 404} file{release-row.html}
 
 css{site}: $tailwind_in $tailwind_cli $tailwind_scan
 {
@@ -191,136 +200,682 @@ css{site}: $tailwind_in $tailwind_cli $tailwind_scan
   touch $path($>)
 }}
 
-# English is the source language, so there is no gettext work to do for
-# it. We still want the language component in the published URL though,
-# which means producing en/index.html just like we produce the
-# translated pages below.
+# The release archive is a slightly unusual part of index.html. Most of
+# the page is authored directly and the build more or less carries that
+# material through to the published page. The archive cannot quite work
+# that way since its contents are the release history of iw4x-client and
+# that history changes independently of this project.
 #
-html{en/index}: html{index}
+# upstream/iw4x-client/releases.build contains the configuration side of
+# this: which repository we ask, which asset we are interested in, and
+# so on. What remains here is perhaps best thought of as two steps.
+# First we acquire one release feed and keep it as part of the build
+# output. Then the page rule below turns that feed into the archive
+# markup.
+#
+
+# Start with the feed. Giving it a proper target is useful for much the
+# same reason that we give the Tailwind output one. The page can name
+# the release history as an ordinary prerequisite and build2 can decide
+# whether acquiring it is necessary from the dependency graph.
+#
+# Note that acquiring the feed is deliberately a one-time operation for
+# a configuration. Once we have a copy, an ordinary incremental build
+# keeps using that copy. This gives us two useful properties. Builds can
+# continue offline after the initial acquisition and repeated builds of
+# the same configuration keep seeing the same release history.
+#
+# If we want a newer history, that is an explicit operation described
+# below by update-releases.
+#
+releases_feed = json{releases}
+
+$releases_feed:
 {
-  install = data/www/en/
+  install = false
 }
+
 {{
-  # $url is another input that never appears as a normal prerequisite.
-  # If the configured origin changes then this page has to change with
-  # it, so remember the value in the depdb.
+  # There is one slightly awkward case here. releases_snapshot is a
+  # configured path and not a target prerequisite, so build2 has nothing
+  # from which to notice that somebody edited the file behind that path.
   #
-  depdb string "$url"
+  # Making the snapshot an ordinary prerequisite would perhaps seem like
+  # the natural solution. It does not quite work for an arbitrary
+  # configured path. In particular, a path naming a file in another
+  # build2 project can be interpreted in terms of that project's output
+  # tree. Our tests use a snapshot from this project, which is enough to
+  # make that distinction observable in practice.
+  #
+  # So read the snapshot here and put its parsed contents into the
+  # depdb. Note that we serialize the JSON value and do not hash the
+  # bytes from the file. Formatting the snapshot differently should not
+  # rebuild anything if it still describes exactly the same release
+  # feed.
+  #
+  releases_snapshot_state = ''
+  if ($releases_snapshot != [null])
+    releases_snapshot_state = $json.serialize($json.load($releases_snapshot), 0)
 
-  diag gen $>
+  # There are two more inputs that have the same property. The URL comes
+  # from configuration and the choice between the network and snapshot
+  # paths is itself configuration state. Neither has a prerequisite
+  # standing in for it, so remember them.
+  #
+  # This is the same idea as the Tailwind acquisition rule: if something
+  # can change what bytes we acquire and there is no target through
+  # which build2 can observe that change, put it in the depdb.
+  #
+  depdb hash "$releases_snapshot_state"
+  depdb string "$releases_api_url"
+  depdb string "$releases_snapshot"
 
-  # Keep the real production origin in the authored document. That gives
-  # index.html sensible metadata when it is opened directly and leaves
-  # us with one stable string to replace here.
+  # curl has a few less visible inputs of its own. Certificate lookup
+  # and proxy selection come from the environment, and changing either
+  # can change the result of the request. Record the variables curl may
+  # consult here.
   #
-  # Now substitute the configured origin into the generated copy.
+  depdb env SSL_CERT_DIR SSL_CERT_FILE CURL_CA_BUNDLE http_proxy https_proxy no_proxy
+
+  diag curl $>
+
+  # Acquire into a sibling temporary file first. We only want
+  # releases_feed to appear once we have the complete input.
   #
-  sed -e "s|https\\://iw4x\\.io|$url|g" $path($<) >$path($>)
+  # Writing directly to $> has an unpleasant failure mode: an
+  # interrupted transfer can leave a truncated file at the target path.
+  # The next rule then sees what looks like an existing feed and fails
+  # later with a JSON error, which points at the wrong part of the
+  # build.
+  #
+  # Moving a complete temporary file into place gives the target a much
+  # simpler invariant: if it exists, it contains the complete result of
+  # the acquisition.
+  #
+  t = "$path($>).t"
+
+  rm -f "$t"
+
+  if ("$releases_snapshot" != '')
+  {
+    # A snapshot stands in for the request completely. Still copy it
+    # through the temporary file so there is only one point below at
+    # which $> becomes the acquired feed.
+    #
+    cp "$releases_snapshot" "$t"
+  }
+  else
+    $curl $releases_curl_options --output "$t" "$releases_api_url"
+
+  mv "$t" $path($>)
 }}
 
-pages = html{en/index}
+# Now consider refreshing the release history.
+#
+# The acquisition rule above intentionally keeps the first feed it
+# obtains. That is the useful behaviour for development, where
+# rebuilding the website should not unexpectedly depend on GitHub or
+# start producing different output from one invocation to the next.
+#
+# A deployment has a different need. The archive published today should
+# be built from the releases that exist today. A CI configuration
+# naturally gets this from its empty output directory, since there is no
+# releases_feed yet. For a persistent configuration we make the refresh
+# explicit:
+#
+#   b 'www/alias{update-releases}' b
+#
+# Note that the second build matters. update-releases replaces the feed
+# target. The normal page rule then observes that changed prerequisite
+# and regenerates the pages from it.
+#
+# We could perhaps implement this alias by deleting releases_feed and
+# leaving the acquisition rule to recreate it on the following build.
+# Keeping the old feed until a new one has been acquired is nicer. A
+# failed refresh then leaves the configuration with its previous usable
+# archive instead of no archive.
+#
+# One other detail here is perhaps surprising: releases_feed is a
+# prerequisite of a recipe whose purpose is to replace it. We need the
+# target matched before $path() can give us its path, and making it a
+# prerequisite is how this recipe gets that matched target. If the feed
+# already exists, matching it is cheap as the network request still
+# happens exactly once, below.
+#
+alias{update-releases}: $releases_feed
+{{
+  diag curl $<
 
-for l: $linguas
+  # Use $path() directly when forming the temporary name. In build2 a
+  # '.' is a perfectly ordinary character in a variable name, so writing
+  # "$f.t" would ask for a variable named f.t. That failure is
+  # particularly easy to miss here since the expansion would simply be
+  # empty.
+  #
+  t = "$path($<[0]).t"
+
+  rm -f "$t"
+
+  if ("$releases_snapshot" != '')
+    cp "$releases_snapshot" "$t"
+  else
+    $curl $releases_curl_options --output "$t" "$releases_api_url"
+
+  mv "$t" $path($<[0])
+}}
+
+# And now the pages.
+#
+# We used to have one rule for English and another for the translated
+# pages. That worked reasonably well when the translated rule had one
+# extra job, namely running msgfmt. With the release archive there is
+# now quite a bit of work after that point which is exactly the same for
+# every language.
+#
+# We could perhaps still keep the two rules and duplicate that part, but
+# then every change to how a release row is written would have to be
+# made in both places. So let's keep one rule and make English the
+# simple case where there is no msgfmt step.
+#
+# Note that the recipe below refers to its prerequisites by position.
+# Keep the order here in sync with those uses:
+#
+# [0]  authored index.html
+# [1]  acquired release feed
+# [2]  release-row.html
+# [3]  archive strings in the page language
+#
+# And, for translated pages:
+#
+# [4]  PO catalogue
+# [5]  ITS rules
+# [6]  ITS locating rules
+#
+pages =
+
+for l: en $linguas
 {
   p = html{$l/index}
   pages += $p
 
-  # One detail worth getting right here is the catalogue prerequisite.
-  # It would be easy to depend on all the PO files and let build2 sort
-  # it out, but an edit to fr.po would then make de/index.html out of
-  # date for no reason.
-  #
-  # msgfmt reads exactly one catalogue for each page, so give the page
-  # exactly that prerequisite.
-  #
-  $p: html{index} po{$src_root/po/$l} $its $loc
+  prereqs = html{index} $releases_feed file{release-row\.html}
+
+  if ($l == 'en')
+  {
+    # English is our source language. po/strings.html already contains
+    # the strings in the form needed by the English page, so use it
+    # directly.
+    #
+    prereqs += $strings
+  }
+  else
+  {
+    # Give each translated page exactly the catalogue msgfmt will read
+    # for that page.
+    #
+    # Depending on every PO file here would work mechanically, but it
+    # would make an edit to fr.po invalidate de/index.html and every
+    # other language. There is no dependency between those pages, so
+    # expressing one would just create needless rebuilds.
+    #
+    prereqs += ../po/html{$l/strings} po{$src_root/po/$l} $its $loc
+  }
+
+  $p: $prereqs
   {
     install = data/www/$l/
     lang = $l
   }
+
   {{
-    # msgfmt itself was found elsewhere. What we need to remember here
-    # is the version we found, since changing it means the program doing
-    # this transformation has changed with none of the file
-    # prerequisites necessarily changing.
+    # First parse the release feed. json.load() is impure as far as
+    # build2 is concerned, so it has to happen in the depdb preamble
+    # where reading a prerequisite and carrying the resulting value into
+    # the recipe is allowed.
+    #
+    releases = $json.load($path($<[1]))
+
+    # Now record the inputs that can change the result without changing
+    # any of the file prerequisites. In particular, the msgfmt
+    # executable may remain at the same path after an upgrade, so the
+    # path alone does not describe the msgfmt we used to produce this
+    # page. Its version does.
+    #
+    # The configured origin and release archive settings are similar in
+    # this respect. They become text in the generated page, though there
+    # is no file prerequisite whose timestamp can stand for them. So
+    # keep these values in depdb and let a change to any one of them
+    # rerun the recipe.
     #
     depdb string "$msgfmt_version"
-
-    # $url and $lang are similar to the Tailwind values above: both
-    # affect the result, neither is represented by a file prerequisite.
-    # So remember them here as well.
-    #
     depdb string "$url"
     depdb string "$lang"
+    depdb string "$releases_count"
+    depdb string "$releases_asset"
 
-    # msgfmt has one more input that is easy to miss. It finds the ITS
-    # data through GETTEXTDATADIR, so a change there is invisible from
-    # the command line. Put the environment value into the depdb as
-    # well.
+    # msgfmt finds the ITS data directory through GETTEXTDATADIR. There
+    # is nothing in its command line from which build2 could rediscover
+    # that value, so record the environment variable.
     #
     depdb env GETTEXTDATADIR
 
-    diag msgfmt $>
+    diag gen $>
 
-    # The result from msgfmt isn't quite the page we want to publish.
-    # There is still a small serialization cleanup below, so keep this
-    # first result under a temporary name and reserve $> for the
-    # finished page.
+    # A successful GitHub releases response is an array. An error
+    # response may instead be an object, and a configured snapshot can
+    # of course contain whatever was put into it. curl --fail protects
+    # the normal network path, though it cannot say anything about a
+    # snapshot that we were given directly.
+    #
+    # So check the shape here, before we start treating the value as a
+    # sequence of release records. Bail out if it is something else.
+    # Otherwise the failure tends to show up much later in the archive
+    # loop where the actual problem, namely a bad feed, is considerably
+    # less obvious.
+    #
+    if ($json.value_type($releases) != 'array')
+      exit "$path($<[1]) is not a list of releases"
+
+    o = $path($>)
+
+    # Build the page through an intermediate file. At this point $t will
+    # become the complete page in the requested language with the
+    # release marker intact. Near the end of the recipe we copy it to $>
+    # and replace that marker with the generated rows.
+    #
+    # It is tempting to write the translated page directly to $> and
+    # then modify it in place. Keeping $> for the final form gives us a
+    # nicer invariant: once something is written there, it is already in
+    # the form expected by the target. A failed release expansion cannot
+    # leave a partially processed page at the target path.
     #
     t = "$path($>).t"
 
-    # --replace-text is perhaps easy to overlook. Without it msgfmt
-    # keeps the source text and adds the translated text alongside it.
-    # Here we want the translated text to occupy the same place as the
-    # English text, hence the option.
-    #
-    env "GETTEXTDATADIR=$gettextdatadir" -- \
-      $msgfmt --xml -L iw4x --replace-text "--template=$path($<[0])" \
-              --locale=$lang --output-file="$t" $path($<[1])
+    if ($lang == 'en')
+    {
+      # Keep the production origin in the authored document. This makes
+      # the source page useful on its own and, perhaps more importantly
+      # here, gives the build one stable string from which configured
+      # deployments can be produced.
+      #
+      # English needs no msgfmt pass, so replacing that origin is all
+      # that is needed before release expansion.
+      #
+      sed -e "s|https://iw4x\\.io|$url|g" $path($<[0]) >"$t"
+    }
+    else
+    {
+      # Ask msgfmt to replace source text in the template with
+      # translated text. The --replace-text detail is easy to overlook:
+      # XML mode without it retains the source text and places the
+      # translation beside it. That is useful for some XML workflows,
+      # though it is not the document structure that this site
+      # publishes.
+      #
+      x = "$path($>).x"
 
-    # Now comes the slightly fiddly part. msgfmt has done the
-    # translation, but its XML serialization is not quite the text/html
-    # document we want to publish. There are only a few differences, so
-    # fix them together here.
-    #
-    # First is the prologue. msgfmt writes an XML declaration and keeps
-    # the doctype from the template. An HTML parser treats that
-    # declaration as a bogus comment, leaving the doctype in the wrong
-    # place for what we want. So blank the original doctype and turn the
-    # XML declaration into a new one.
-    #
-    # Note that the order of those two substitutions matters. If we
-    # produced the new doctype first, the expression that blanks the old
-    # one could see the new one as well. Leaving the old line empty is
-    # harmless, so there is no real reason to add another pass just to
-    # remove it.
-    #
-    # Next are the xml:lang attributes that msgfmt adds to translated
-    # elements. This page has a single language, so put that information
-    # on the root html element and remove the per-element copies.
-    #
-    # Then fix the canonical URL. The template quite naturally names
-    # /en, since that is the page we author. A translated copy needs to
-    # name its own language instead.
-    #
-    # Finally substitute the configured origin. Do this last so the
-    # canonical rewrite above can keep matching the stable production
-    # URL from the source document instead of having to know what $url
-    # happens to be.
-    #
-    sed -e 's|^\<!DOCTYPE html>$||'                                             \
-        -e 's|^<[?]xml[^>]*[?]>$|\<!DOCTYPE html>|'                             \
-        -e 's| xml:lang="[a-z]*"||g'                                          \
-        -e "s|\<html xmlns=\"http\://www\.w3.org/1999/xhtml\" lang=\"en\">|\<html xmlns=\"http\://www\.w3.org/1999/xhtml\" lang=\"$lang\" xml:lang=\"$lang\">|" \
-        -e "s|rel=\"canonical\" href=\"https\://iw4x\\.io/en\"|rel=\"canonical\" href=\"https\://iw4x.io/$lang\"|" \
-        -e "s|https\\://iw4x\\.io|$url|g"                                       \
-        "$t" >$path($>)
+      env "GETTEXTDATADIR=$gettextdatadir" -- \
+        $msgfmt --xml -L iw4x --replace-text "--template=$path($<[0])" \
+                --locale=$lang --output-file="$x" $path($<[4])
 
-    # And that is the finished page. Nothing below needs the
-    # intermediate XML, so get rid of it now rather than leaving scratch
-    # state in the output directory.
+      # We now have the translated document. msgfmt's XML serializer
+      # gets us quite close to the HTML source, with a few serialization
+      # details that need to be put back into the form used by the site.
+      #
+      # Start with the prologue. msgfmt writes an XML declaration and
+      # retains the doctype from the template. For text/html we want a
+      # single doctype at the beginning of the document. Blank the
+      # retained doctype first and then turn the XML declaration into
+      # the doctype we keep.
+      #
+      # Note that this order matters. If we introduced the new doctype
+      # first, the expression which removes the old one could see the
+      # newly-created line as well. Leaving the removed line empty costs
+      # us nothing and saves another pass whose sole job would be
+      # deleting it.
+      #
+      # Note also that msgfmt puts xml:lang on translated elements. This
+      # page has one language for the entire document, so put that
+      # language on the root html element and remove the repeated
+      # attributes from its descendants.
+      #
+      # Finally, adjust the canonical URL and site origin. The authored
+      # page always names /en and the production origin, which gives us
+      # stable text to match here. Rewrite /en for the language being
+      # generated first, then substitute the configured origin.
+      #
+      sed -e 's|^<!DOCTYPE html>$||'                                                                                                                             \
+          -e 's|^<[?]xml[^>]*[?]>$|<!DOCTYPE html>|'                                                                                                             \
+          -e 's| xml\:lang="[a-z]*"||g'                                                                                                                          \
+          -e "s|<html xmlns=\"http\://www\.w3.org/1999/xhtml\" lang=\"en\">|<html xmlns=\"http\://www\.w3.org/1999/xhtml\" lang=\"$lang\" xml\:lang=\"$lang\">|" \
+          -e "s|rel=\"canonical\" href=\"https\://iw4x\\.io/en\"|rel=\"canonical\" href=\"https\://iw4x.io/$lang\"|"                                             \
+          -e "s|https\\\\://iw4x\\\\.io|$url|g"                                                                                                                  \
+          "$x" >"$t"
+
+      # Nothing below needs the serializer output. msgfmt created $x
+      # directly through --output-file, so it is our scratch file to
+      # dispose of once the normalization pass has consumed it.
+      #
+      rm -f "$x"
+    }
+
+    # Next get the small pieces of translated prose that are inserted
+    # into each generated release row.
     #
-    rm -f "$t"
+    # po/strings.html is the authored English document. po/buildfile
+    # produces the corresponding translated document for every other
+    # language. From the point of view of this recipe prerequisite [3]
+    # is simply the XHTML string document for the language we are
+    # generating.
+    #
+    # The element ids are the interface between that document and this
+    # recipe. Keeping that interface explicit is useful here:
+    # translators work with normal document text and the archive
+    # generator only needs to know which pieces it is looking for.
+    #
+    s = $path($<[3])
+
+    sed -n -e 's%^ *<p id="release-date"[^>]*>(.+)</p>$%\1%p' "$s" | \
+      set date_pattern
+
+    sed -n -e 's%^ *<p id="release-changelog"[^>]*>(.+)</p>$%\1%p' "$s" | \
+      set notes_label
+
+    sed -n -e 's%^ *<p id="release-download"[^>]*>(.+)</p>$%\1%p' "$s" | \
+      set download_label
+
+    # Treat a missing string as a mismatch in that interface. An empty
+    # match would otherwise turn into an empty label on every generated
+    # row, which makes a typo in an id look like valid output.
+    #
+    # Bail out here where we still know what was being extracted and can
+    # point at the two files that have to agree.
+    #
+    if ("$date_pattern" == '' || "$notes_label" == '' || "$download_label" == '')
+      exit "$s does not have the strings the release archive needs; \
+po/strings.html and www/buildfile have to agree on the ids"
+
+    # Note that these three values are already markup text. The authored
+    # XHTML carries escaped text at its source and msgfmt escapes
+    # translated text as part of XML serialization. Escaping the strings
+    # a second time here would turn, say, an existing '&amp;' into
+    # '&amp;amp;'.
+    #
+    # Values read from the JSON feed have not gone through an HTML
+    # serializer. Those are plain strings, so we will escape them later
+    # once we know whether a value is being placed in element text or
+    # inside a quoted attribute.
+    #
+    # Read the row template once now. The markup itself is independent
+    # of the page language. The generated release values and the strings
+    # extracted above are the parts that vary for each row.
+    #
+    cat $path($<[2]) | set -n row
+
+    # We can now copy the translated page to its final target and expand
+    # the archive marker when we encounter it.
+    #
+    # A line-at-a-time copy is perhaps a little pedestrian, though it
+    # has a useful property for this job: everything outside the marker
+    # travels from $t to $> unchanged. None of that text has to become
+    # part of a substitution expression.
+    #
+    # Replacing the marker with one large sed replacement would put the
+    # whole generated fragment through sed's replacement syntax. Release
+    # names and URLs come from the feed, so such a replacement would
+    # need another layer of escaping whose exact form depends on the
+    # generated values and the delimiter picked for sed. There is little
+    # benefit in introducing that representation here.
+    #
+    true >$o
+
+    for -n line <="$t"
+    {
+      if $regex.match("$line", '^ *<!--@releases@-->$')
+      {
+        # Preserve the marker's indentation. release-row.html
+        # intentionally starts its lines at column zero, so the template
+        # does not have to know where index.html happens to place the
+        # archive.
+        #
+        # This gives the marker ownership of indentation and lets the
+        # row template remain reusable if the surrounding markup moves
+        # later.
+        #
+        indent = $regex.replace("$line", '^( *)<!--@releases@-->$', '\1')
+
+        n = [uint64] 0
+
+        for r: $releases
+        {
+          # Drafts have not been published and prereleases are outside
+          # the history represented by this archive, so neither is a
+          # candidate for a row.
+          #
+          # An unauthenticated GitHub releases response normally leaves
+          # drafts out. Keep the test here all the same. Authenticated
+          # feeds and hand-written snapshots need not have the same
+          # omission.
+          #
+          # Some older snapshots do not contain Boolean members. Treat a
+          # missing member as false, matching the meaning of the normal
+          # public feed in the cases we care about.
+          #
+          draft = ($r[draft])
+          prerelease = ($r[prerelease])
+
+          if ($draft == [null])
+            draft = false
+
+          if ($prerelease == [null])
+            prerelease = false
+
+          publish = true
+
+          if $draft
+            publish = false
+
+          if $prerelease
+            publish = false
+
+          # Stop selecting rows once the configured archive size has
+          # been reached. We still finish walking the feed, which keeps
+          # selection expressed in one place and avoids giving the loop
+          # a second exit condition.
+          #
+          if ($n == $releases_count)
+            publish = false
+
+          if $publish
+          {
+            tag = ($r[tag_name])
+            published = ($r[published_at])
+            notes_url = ($r[html_url])
+
+            # These are the minimum fields needed to construct a release
+            # row. A selected record without one of them cannot be
+            # represented by the template in any useful way, so bail out
+            # before deriving anything from incomplete data.
+            #
+            if ($tag == [null] || $published == [null] || $notes_url == [null])
+              exit "a release in $path($<[1]) is missing tag_name, \
+published_at or html_url"
+
+            # The archive displays the publication day and leaves the
+            # time out. GitHub gives us an ISO timestamp, so first
+            # reduce it to the calendar date and then split that into
+            # the three fields used by the translated date pattern.
+            #
+            # Note that the ordering is intentionally absent from this
+            # code. strings.html decides where year, month, and day
+            # appear for each language. The recipe only supplies those
+            # fields.
+            #
+            if (!$regex.match("$published", '^\d{4}-\d{2}-\d{2}T.*$'))
+              exit "release $tag has an unexpected published_at value \
+in $path($<[1]): $published"
+
+            date = $regex.replace("$published", '^(\d{4}-\d{2}-\d{2})T.*$', '\1')
+
+            year = $regex.replace("$date", '^(\d{4})-\d{2}-\d{2}$', '\1')
+            month = $regex.replace("$date", '^\d{4}-(\d{2})-\d{2}$', '\1')
+            day = $regex.replace("$date", '^\d{4}-\d{2}-(\d{2})$', '\1')
+
+            # Month names are stored in strings.html under ids
+            # containing the two-digit month number. Build the sed
+            # expression from a fixed literal and then put the month
+            # into its one placeholder.
+            #
+            # We could perhaps interpolate $month directly into a
+            # double-quoted sed expression. That makes the end anchor
+            # and backreference cross another level of build2 quoting,
+            # and a quoting mistake there tends to present itself as an
+            # empty match. Keeping the expression literal up to this
+            # point makes it much easier to see which syntax belongs to
+            # sed and which part is the value we are inserting.
+            #
+            month_expr = $string.replace(\
+              's%^ *<p id="release-month-@month@"[^>]*>(.+)</p>$%\1%p', \
+              '@month@', "$month")
+
+            sed -n -e "$month_expr" "$s" | set month_name
+
+            if ("$month_name" == '')
+              exit "$s has no name for month $month"
+
+            # GitHub uses two digits for the day. The display form does
+            # not need the leading zero on the first nine days of a
+            # month, so trim that one case before inserting the value
+            # into the pattern.
+            #
+            day = $regex.replace("$day", '^0(\d)$', '\1')
+
+            # Fill the structural date fields first and insert the
+            # translated month name last.
+            #
+            # The month name is free translated text. Delaying its
+            # insertion keeps that text out of the earlier placeholder
+            # searches, which means its contents can never accidentally
+            # look like one of our structural tokens.
+            #
+            date_text = $string.replace("$date_pattern", '{year}', "$year")
+            date_text = $string.replace("$date_text", '{day}', "$day")
+            date_text = $string.replace("$date_text", '{month}', "$month_name")
+
+            # Start the download link at the release page. A release
+            # still belongs in the archive when it does not carry the
+            # configured client asset, and the release page is a useful
+            # destination in that case.
+            #
+            # If the asset is present, use its browser download URL
+            # instead.
+            #
+            download_url = "$notes_url"
+
+            for a: ($r[assets])
+            {
+              if (($a[name]) == $releases_asset)
+                download_url = ($a[browser_download_url])
+            }
+
+            # Escape the values that came from JSON now that their
+            # destination in the template is known.
+            #
+            # The tag becomes element text. Escape '&' first so entities
+            # introduced by the later replacements are left alone, then
+            # escape the angle brackets that could otherwise be
+            # interpreted as markup.
+            #
+            # The two URLs go into double-quoted attributes. Here the
+            # dangerous characters are '&' and the quote that could
+            # terminate the attribute value.
+            #
+            # date_text needs no corresponding pass. Its translated
+            # pieces came from XHTML and have already been serialized
+            # safely. The fields we inserted into that text ourselves
+            # contain decimal digits.
+            #
+            tag_text = $string.replace("$tag", '&', '&amp;')
+            tag_text = $string.replace("$tag_text", '<', '&lt;')
+            tag_text = $string.replace("$tag_text", '>', '&gt;')
+
+            notes_href = $string.replace("$notes_url", '&', '&amp;')
+            notes_href = $string.replace("$notes_href", '"', '&quot;')
+
+            download_href = $string.replace("$download_url", '&', '&amp;')
+            download_href = $string.replace("$download_href", '"', '&quot;')
+
+            # Keep the generated section formatted like the authored
+            # markup by putting one empty line between rows. Start from
+            # the second row so replacing the marker does not introduce
+            # an empty line before the first release.
+            #
+            if ($n != 0)
+              echo '' >>$o
+
+            for rl: $row
+            {
+              if ("$rl" == '')
+              {
+                # Keep an empty template line truly empty. Prefixing the
+                # marker indentation here would turn a formatting-only
+                # blank line into a line containing trailing whitespace
+                # in every generated page.
+                #
+                echo '' >>$o
+              }
+              else
+              {
+                # Expand the descriptive placeholders before the shorter
+                # ones. Each replacement then owns one complete token
+                # and a future template can introduce related names
+                # without a shorter token consuming part of a longer one
+                # first.
+                #
+                # At this point every replacement value is already in
+                # the form required by its destination, so this loop has
+                # one job: fill the template and restore the indentation
+                # inherited from the archive marker.
+                #
+                e = $string.replace("$rl", '@date-text@', "$date_text")
+                e = $string.replace("$e", '@date@', "$date")
+                e = $string.replace("$e", '@tag@', "$tag_text")
+                e = $string.replace("$e", '@notes-url@', "$notes_href")
+                e = $string.replace("$e", '@notes-text@', "$notes_label")
+                e = $string.replace("$e", '@download-url@', "$download_href")
+                e = $string.replace("$e", '@download-text@', "$download_label")
+
+                echo "$indent$e" >>$o
+              }
+            }
+
+            n += 1
+          }
+        }
+
+        # Seeing the marker and producing no rows means the configured
+        # release source cannot provide the archive this page is meant
+        # to contain. This can happen when there are no publishable
+        # releases or when a supplied snapshot describes some other
+        # release history.
+        #
+        # An empty archive would still be syntactically valid HTML,
+        # which makes silently accepting it particularly unhelpful. Bail
+        # out here and point at the release source configuration
+        # instead.
+        #
+        if ($n == 0)
+          exit "no releases to publish in $path($<[1]); check \
+config.iw4x_website.releases.repository"
+      }
+      else
+        echo "$line" >>$o
+    }
+
+    # Leave $t in place when the recipe ends. The redirection which
+    # produced it registered that path with build2, so build2 owns the
+    # temporary output and removes it as part of recipe cleanup.
+    #
   }}
 }
 

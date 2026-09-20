@@ -2,6 +2,7 @@
 
 @source "./index.html";
 @source "./404.html";
+@source "./release-row.html";
 
 @font-face {
   font-family: Inter;
