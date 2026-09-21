@@ -54,12 +54,24 @@ reproduces the published site.
 | network access to `github.com` and `api.github.com`                  | likewise, unless you supply the CLI and the feed yourself           |
 | `xmllint` (libxml2), optional                                        | enables the well-formedness checks in the test suite                |
 
-Note that gettext version matters. `msgfmt --replace-text` arrived in 0.23,
-and the same release changed how escaping is handled between `xgettext`
-and `msgfmt`. An older gettext will not build this site correctly.
+Apache needs a few modules that are normally part of the standard
+installation but may not be enabled by default. We use `mod_rewrite`,
+`mod_headers`, `mod_deflate`, `mod_filter`, `mod_dir`, and
+`mod_negotiation`. On Debian they can all be enabled with:
 
-Note also that the build acquires the Tailwind CSS CLI by itself.
-Nothing else needs installing.
+```sh
+$ sudo a2enmod rewrite headers deflate filter dir negotiation
+```
+
+The gettext version is perhaps the less obvious requirement here.
+`msgfmt --replace-text` first appeared in 0.23, and that release also
+changed the escaping between `xgettext` and `msgfmt`. So using an older
+gettext may appear to work for part of the build but will not produce
+the site correctly.
+
+There is no similar prerequisite for Tailwind. The build downloads the
+Tailwind CSS CLI it needs, so there is nothing to install for it by
+hand.
 
 ## Building
 
