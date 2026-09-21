@@ -18,19 +18,16 @@
 
   The first is that gettext reads it as XML (see po/its/iw4x.its). So let's
   keep it as polyglot XHTML5. In practice this mostly means being a little
-  stricter than an HTML parser would require: close void elements, quote
-  attributes, and remember the namespace on inline SVG.
+  stricter than an HTML parser would require:
+
+    https://html.spec.whatwg.org/multipage/xhtml.html
 
   The other is that msgfmt replaces element text but leaves attribute values
   alone. This matters in a few places where we might otherwise be tempted to
-  put visible or accessible text in an attribute. An aria-label on an icon
+  put accessible text in an attribute. An aria-label on an icon
   link, for example, would remain English in every translated page. So use a
   hidden span instead and let gettext see the same text that a screen reader
   will see.
-
-  And finally, no JavaScript. There isn't actually anything here that needs it.
-  The requirement switch can use radio buttons, the FAQ already has
-  details/summary, and everything else is just a link.
 -->
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
@@ -350,7 +347,7 @@
                 >
 
                 <p class="pb-6 text-base tracking-body text-muted"
-                  >IW4x is a separate multiplayer client for Modern Warfare 2. Mods are supported on both x86 and x64, and they are entirely optional. You can install IW4x and play without touching them.</p
+                  >IW4x is a multiplayer client for Modern Warfare 2. Mods are supported on both x86 and x64, but are entirely optional. You can install IW4x and play without touching them.</p
                 >
               </details>
 
