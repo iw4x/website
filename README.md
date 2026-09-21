@@ -44,54 +44,6 @@ appears under `www/` in the output directory is generated, and so is
 `po/iw4x.pot`. A checkout together with an empty output directory
 reproduces the published site.
 
-## How the site is built
-
-The build acquires the Tailwind CSS CLI first.
-`upstream/tailwind/tailwind.build` selects the release artifact for the
-host and records its SHA256. `curl` downloads that artifact into a
-temporary file. Bail out if its checksum disagrees with the recorded
-one. Supply your own copy through `config.iw4x_website.tailwind` when
-the machine has no network access.
-
-The CLI then generates `www/site.css` from `www/tailwind.css`. Tailwind
-scans `www/index.html` and `www/404.html` to decide which utility
-classes to emit, so both pages are prerequisites of the stylesheet.
-Editing a page regenerates the CSS.
-
-`en/index.html` is a copy of `www/index.html` with the configured origin
-substituted for the production one.
-
-Each translated page comes from `msgfmt --xml --replace-text`, which
-takes the English document as a template and puts the strings of one PO
-catalogue in place of its translatable text. Note that a page depends on
-exactly one catalogue. Editing `fr.po` rebuilds the French page and
-leaves the other languages alone.
-
-The release archive at the bottom of the page is not authored.
-`www/index.html` carries the section and a marker where the rows belong.
-`curl` writes the release feed of `iw4x/iw4x-client` to
-`www/releases.json` and the build reads it with build2's JSON support.
-Drafts and prereleases are skipped, and the five most recent releases
-that remain become rows, each linking the `iw4x.dll` of its release. A
-release without that asset links its release page instead.
-
-`www/release-row.html` holds the markup for one row. Tailwind scans it
-alongside the two pages, so the classes a row uses reach the stylesheet.
-Its text comes from `po/strings.html` and is translated like the rest
-of the page.
-The French page writes `6 septembre 2026`.
-
-A configuration acquires the feed once and then keeps it, so an
-incremental build needs no network and repeated builds work from the
-same releases. A deployment starts from an empty output directory and so
-always fetches. Supply the feed yourself through
-`config.iw4x_website.releases` when the machine has no network access.
-
-`sitemap.xml`, `robots.txt` and `.htaccess` are generated from
-`po/LINGUAS` together with the configured origin. This is why a new
-language needs little beyond its catalogue. The sitemap entries and the
-server's language-prefix rules follow from that one list.
-
 ## Prerequisites
 
 | Requirement                                                          | Notes                                                               |
