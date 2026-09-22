@@ -69,6 +69,21 @@
   --wordmark-accent: var(--color-neutral-950);
 
   --focus-ring: var(--color-neutral-950);
+
+  /* Intersex-inclusive Progress Pride flag colours, the same in both themes. */
+  --pride-red: #e40303;
+  --pride-orange: #ff8c00;
+  --pride-yellow: #ffed00;
+  --pride-green: #008018;
+  --pride-blue: #0066ff;
+  --pride-purple: #732982;
+  --pride-brown: #613915;
+  --pride-black: #000000;
+  --pride-light-blue: #55cdfc;
+  --pride-pink: #f7a8b8;
+  --pride-white: #ffffff;
+  --pride-intersex-yellow: #ffd800;
+  --pride-intersex-purple: #7902aa;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -104,6 +119,20 @@
   --color-accent-edge: var(--accent-edge);
   --color-accent-text: var(--accent-text);
   --color-wordmark-accent: var(--wordmark-accent);
+
+  --color-pride-red: var(--pride-red);
+  --color-pride-orange: var(--pride-orange);
+  --color-pride-yellow: var(--pride-yellow);
+  --color-pride-green: var(--pride-green);
+  --color-pride-blue: var(--pride-blue);
+  --color-pride-purple: var(--pride-purple);
+  --color-pride-brown: var(--pride-brown);
+  --color-pride-black: var(--pride-black);
+  --color-pride-light-blue: var(--pride-light-blue);
+  --color-pride-pink: var(--pride-pink);
+  --color-pride-white: var(--pride-white);
+  --color-pride-intersex-yellow: var(--pride-intersex-yellow);
+  --color-pride-intersex-purple: var(--pride-intersex-purple);
 
   --text-display: clamp(2.5rem, 1.1667rem + 6.6667vw, 6.5rem);
   --text-display--line-height: 1;
