@@ -289,8 +289,9 @@ name is needed. One attribute stays English as a consequence, the page
 description in `<meta name="description">`.
 
 An element marked `translate="no"` carries a name and stays as it is.
-The IW4x wordmark and `x86` are marked this way. Inline SVG is excluded
-as well, since the icons carry no text.
+The IW4x wordmark and the client names, `IW4x` and `IW4x (mm)`, are
+marked this way. Inline SVG is excluded as well, since the icons carry
+no text.
 
 `po/strings.html` is the second translation input named in `POTFILES`.
 It holds the text used by the generated release rows, which have no
@@ -398,10 +399,10 @@ Markup that appears inside a message stays intact together with its
 attributes. The `msgid` is the authority for what that markup is, and
 only the text around it changes.
 
-Names are left alone. `IW4x` and `x86` are marked untranslatable and do
-not reach the catalogue. The page title is the one message that spells
-the name, and its `msgstr` stays empty unless your language spells
-`IW4x` differently.
+Names are left alone. `IW4x` and `IW4x (mm)` are marked untranslatable
+and do not reach the catalogue. The page title is the one message that
+spells the name, and its `msgstr` stays empty unless your language
+spells `IW4x` differently.
 
 Remove the `#, fuzzy` marker from an entry once you have checked its
 translation. Note that a fuzzy entry is ignored and the page falls back

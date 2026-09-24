@@ -490,7 +490,10 @@
     sed -n -e 's%.*>(IW4)<span class="text-wordmark-accent">x</span>.*%\1%p' \
       $page >'IW4'
 
-    sed -n -e 's%.*<dt translate="no" [^>]*>(x86)</dt>.*%\1%p' $page >'x86'
+    sed -n -e 's%.*<dt translate="no" [^>]*>(IW4x)</dt>.*%\1%p' $page >'IW4x'
+
+    sed -n -e 's%.*<dt translate="no" [^>]*>(IW4x \(mm\))</dt>.*%\1%p' \
+      $page >'IW4x (mm)'
 
     sed -n -e 's%.*>([0-9]+\. ZZ-[A-Za-z]+ [0-9]{4}).*%\1%p' $page >>EOO
     24. ZZ-Dezember 2026
