@@ -1,6 +1,6 @@
 : 1
 name: iw4x-website
-version: 0.1.0-a.1
+version: 0.1.0-a.1.z
 summary: web C++ bare
 license: GPL-3.0-or-later ; GNU General Public License v3.0 or later.
 depends: * build2 >= 0.18.0
