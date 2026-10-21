@@ -1,0 +1,13 @@
+# three.js, as published on npm (three@0.170.0, build/three.module.min.js).
+# The hero scene is the only user.
+#
+# We keep the file here as is rather than acquiring it the way we do
+# Tailwind. Unlike Tailwind, this is something we serve, and the site
+# serves everything from its own origin (see the CSP in htaccess.in). So
+# it is really in the same position as the Inter fonts next door.
+#
+three = file{three.module.min.js}@./ file{LICENSE}@./
+
+$three: install = data/www/three/
+
+./: $three

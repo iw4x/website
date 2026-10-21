@@ -1,0 +1,9 @@
+# Tools for regenerating www/hero/maps/ from the game. We distribute them
+# so that anyone with a copy of the game can do that. They aren't part of
+# the site, so nothing here gets installed.
+#
+./: file{hero/convert.py hero/views.py hero/serve.py hero/visibility.html \
+         hero/drop.json \
+         hero/visible/*.json}
+
+file{*}: install = false

@@ -24,15 +24,20 @@ DirectoryIndex index.html
 DirectorySlash Off
 
 # The site is pleasantly boring from a browser policy point of view.
-# Everything comes from the same origin, there is no JavaScript, and
-# there isn't anything that needs to embed us or be embedded by us. So
-# we can keep this fairly restrictive without having to punch holes in
-# it later.
+# Everything comes from the same origin and there isn't anything that
+# needs to embed us or be embedded by us. So we can keep this fairly
+# restrictive without having to punch holes in it later.
 #
-# data: for images is the one small exception. The rest is just the
+# The one script is the hero background (hero/main.js and three.js). It
+# is served from here like everything else, so 'self' covers it, and it
+# loads its scene with fetch(), which connect-src already allows. Note
+# that it styles its canvas through the CSSOM, which style-src 'self'
+# doesn't restrict.
+#
+# data: for images is the other small exception. The rest is just the
 # usual browser hardening for a static HTTPS site.
 #
-Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; script-src 'none'; style-src 'self'"
+Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; script-src 'self'; style-src 'self'"
 Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
 Header always set X-Content-Type-Options "nosniff"
 Header always set Referrer-Policy "strict-origin-when-cross-origin"
@@ -60,6 +65,11 @@ Header always set Cache-Control "public, max-age=300, s-maxage=86400, stale-whil
 #
 Header always set Cache-Control "public, max-age=2592000, stale-while-revalidate=86400, stale-if-error=86400" "expr=%{REQUEST_URI} =~ m#^/inter/#"
 
+# The same reasoning applies to three.js and the hero scene bundle. That
+# is several megabytes which only change when we regenerate them.
+#
+Header always set Cache-Control "public, max-age=2592000, stale-while-revalidate=86400, stale-if-error=86400" "expr=%{REQUEST_URI} =~ m#^/(?:three|hero/maps)/#"
+
 # A 404 is almost the opposite case. There isn't much reason for the
 # browser to keep it, though letting a shared cache remember one briefly
 # avoids repeatedly asking for the same missing thing.
@@ -70,11 +80,26 @@ Header always set Cache-Control "public, max-age=2592000, stale-while-revalidate
 Header always set Cache-Control "public, max-age=0, s-maxage=300, stale-while-revalidate=300, stale-if-error=3600" "expr=%{REQUEST_STATUS} -eq 404"
 Header always set X-Robots-Tag "noindex" "expr=%{REQUEST_STATUS} -eq 404"
 
+# Spell out the types we rely on rather than trusting the server's
+# mime.types to be recent. Module scripts in particular must arrive with a
+# JavaScript type, since with nosniff the browser won't run them
+# otherwise.
+#
+AddType text/javascript .js
+AddType application/json .json
+AddType image/webp .webp
+AddType application/octet-stream .bin
+
 # If deflate is available, use it for the few text formats we serve.
 # Nothing particularly clever here.
 #
+# The one non-text entry is scene.bin, which is mostly quantized vertex
+# data and shrinks to about a quarter, so it seems worth it. The webp
+# textures are already compressed.
+#
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/xml
+  AddOutputFilterByType DEFLATE text/javascript application/json application/octet-stream
 </IfModule>
 
 # Keep the error page outside the language directories. By the time we

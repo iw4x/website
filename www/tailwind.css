@@ -103,6 +103,42 @@
   }
 }
 
+/*
+ * The hero sits on the night-time mp_highrise scene, so it stays dark in
+ * both schemes. Note that it is dark even before (or without) the scene,
+ * which saves us from flipping the text colors once the scene appears.
+ * These are the dark values from above.
+ *
+ * Note also that the --color-* names the utilities use are resolved where
+ * @theme declares them, that is, on :root. So overriding the tokens here
+ * is not enough and we have to derive those again as well.
+ */
+.theme-dark {
+  color-scheme: dark;
+
+  --background: var(--color-neutral-950);
+  --surface: var(--color-neutral-800);
+  --foreground: var(--color-neutral-50);
+  --muted: var(--color-neutral-300);
+
+  --rule: var(--color-neutral-800);
+
+  --accent-edge: var(--color-lime-400);
+  --accent-text: var(--color-lime-400);
+  --wordmark-accent: var(--color-lime-400);
+
+  --focus-ring: var(--color-neutral-50);
+
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-rule: var(--rule);
+  --color-accent-edge: var(--accent-edge);
+  --color-accent-text: var(--accent-text);
+  --color-wordmark-accent: var(--wordmark-accent);
+}
+
 @theme {
   --color-background: var(--background);
   --color-surface: var(--surface);

@@ -1,0 +1,18 @@
+# Install the hero scene along with a bundle for every map in maps/<map>/.
+#
+# tools/hero/convert.py generates the bundles and we check them in. Their
+# input is a dump of the game's own fastfiles, which we can't distribute
+# and a build machine won't have.
+#
+# Note that we match the bundles with wildcards since every map has a
+# hundred-odd textures named after whatever the map uses. As a result, a
+# stale file left behind by an earlier conversion gets installed as well,
+# so clean out a map's directory before converting it again.
+#
+install.subdirs = true
+
+./: file{main.js}@./ file{scene.js}@./ file{shots.json}@./ \
+    file{maps/*/scene.json maps/*/scene.bin} \
+    file{maps/*/tex/*.webp}
+
+file{*}: install = data/www/hero/

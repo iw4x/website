@@ -39,13 +39,26 @@
       >'html{index 404} file{release-row.html}'
   }
 
-  : no-scripting
+  # The hero background is the one script on the site. It is an external
+  # module so that the CSP can stay at script-src 'self', which also means
+  # nothing else may script: no inline code, no handlers, and no
+  # javascript: URLs.
+  #
+  : only-the-hero-script
   :
-  for f: index.html 404.html release-row.html
   {
-    sed -n -e 's%.*(<script).*%\1%p' $project_src/www/$f
-    sed -n -e 's%.*( on[a-z]+=").*%\1%p' $project_src/www/$f
-    sed -n -e 's%.*(javascript:).*%\1%p' $project_src/www/$f
+    sed -n -e 's%^ *(<script.*)$%\1%p' $project_src/www/index.html >>EOO
+    <script type="module" src="../hero/main.js"></script>
+    EOO
+
+    for f: index.html 404.html release-row.html
+    {
+      sed -n -e 's%.*( on[a-z]+=").*%\1%p' $project_src/www/$f
+      sed -n -e 's%.*(javascript:).*%\1%p' $project_src/www/$f
+    }
+
+    for f: 404.html release-row.html
+      sed -n -e 's%.*(<script).*%\1%p' $project_src/www/$f
   }
 
   : no-translatable-attributes
@@ -285,11 +298,14 @@
     sed -n -e 's%^[^<].*( xml:lang=").*%\1%p' $site/$l/index.html
   }
 
-  : published-pages-carry-no-scripting
+  : published-pages-carry-only-the-hero-script
   :
   for l: en $linguas
   {
-    sed -n -e 's%.*(<script).*%\1%p' $site/$l/index.html
+    sed -n -e 's%^ *(<script.*)$%\1%p' $site/$l/index.html >>EOO
+    <script type="module" src="../hero/main.js"></script>
+    EOO
+
     sed -n -e 's%.*( on[a-z]+=").*%\1%p' $site/$l/index.html
   }
 
@@ -481,6 +497,12 @@
 
     sed -n -e 's%^ *<link rel="canonical" href="https://iw4x\.io/([a-z]+)"/>$%\1%p' \
       $page >'zz'
+
+    sed -n -e 's%^ *(<script.*)$%\1%p' $page >>EOO
+    <script type="module" src="../hero/main.js"></script>
+    EOO
+
+    sed -n -e 's%.*(<(script|div|span)( [^>]*)?/>).*%\1%p' $page
 
     sed -n -e 's%.*>(ZZ TAGLINE)</p>.*%\1%p' $page >'ZZ TAGLINE'
 
@@ -942,6 +964,15 @@
            upstream/iw4x-client/releases.build                          \
            www/inter/buildfile www/inter/latin.woff2                    \
            www/inter/latin-ext.woff2 www/inter/LICENSE                  \
+           www/three/buildfile www/three/three.module.min.js            \
+           www/three/LICENSE                                            \
+           www/hero/buildfile www/hero/main.js www/hero/scene.js        \
+           www/hero/shots.json                                          \
+           www/hero/maps/mp_highrise/scene.json                         \
+           www/hero/maps/mp_highrise/scene.bin                          \
+           www/hero/maps/mp_highrise/tex/sky.webp                       \
+           tools/buildfile tools/hero/convert.py tools/hero/views.py    \
+           tools/hero/visible/mp_highrise.json                          \
            tests/buildfile tests/testscript tests/releases.json
       test -f $authored/$f
 

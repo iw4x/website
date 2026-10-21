@@ -2,3 +2,4 @@
 
 po/:       install = false
 tests/:    install = false
+tools/:    install = false

@@ -1,0 +1,119 @@
+<!doctype html>
+<!--
+  The visibility pass for convert.py.
+
+  We render each view with every surface colored by its id and count the
+  pixels of each id over all the views. Whatever never shows can stay out
+  of the bundle, and the counts let convert.py also drop what barely
+  shows. The result goes to visible.json.
+
+  To run it, first make an id bundle:
+
+    convert.py <dump-dir> data_ids --ids --no-textures
+
+  Then serve a directory that has www/three, www/hero, data_ids, and this
+  file:
+
+    python3 serve.py <dir> 8765 <outdir>
+
+  And open visibility.html?fov=62&views=<views>, where <views> is what
+  views.py prints for the map. Add base=<dir>/ to read the id bundle from
+  <dir>/ (data_ids/ by default). For example, headless:
+
+    firefox --headless --screenshot x.png 'http://127.0.0.1:8765/visibility.html?...'
+
+  Note that the alpha test of the cutouts needs their textures. Without it
+  they would hide whatever shows through their transparent parts. So
+  either leave out --no-textures or copy (or link) tex/ from a full bundle
+  into data_ids first.
+-->
+<html><body>
+<!-- serve.py holds this image back until we post /done (see there). -->
+<img src="/wait" style="display:none">
+<canvas id="c"></canvas>
+<script type="module">
+import * as THREE from './three/three.module.min.js';
+const q = new URLSearchParams(location.search);
+const log = (m) => fetch('/log', {method:'POST', body:String(m)});
+try {
+  const { createScene } = await import('./hero/scene.js');
+  const base = q.get('base') || './data_ids/';
+  const s = await createScene(document.getElementById('c'), { base });
+  const bin = await (await fetch(base + 'scene.bin')).arrayBuffer();
+  const W = 1600, H = 667;
+  const rt = new THREE.WebGLRenderTarget(W, H, { depthBuffer: true });
+  const idMats = [];
+  const opaque = [], trans = [];
+  // Replace every material with one that outputs the surface id, packed
+  // into the vertex color. We add one to each id so that zero is left for
+  // the background.
+  //
+  for (const m of s.scene.children) {
+    const g = m.userData.group; if (!g) continue;
+    const sid = new Uint32Array(bin, g.sid, g.count);
+    const col = new Uint8Array(g.count * 4);
+    for (let i = 0; i < g.count; i++) {
+      const v = sid[i] + 1;
+      col[i*4] = v & 255; col[i*4+1] = (v >> 8) & 255; col[i*4+2] = (v >> 16) & 255; col[i*4+3] = 255;
+    }
+    m.geometry.setAttribute('sidc', new THREE.BufferAttribute(col, 4, true));
+    const cut = g.kind === 'cutout';
+    m.material = new THREE.ShaderMaterial({
+      vertexShader: `attribute vec4 sidc; varying vec4 vC; varying vec2 vUv; void main(){ vC = sidc; vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+      fragmentShader: `uniform sampler2D map; varying vec4 vC; varying vec2 vUv; void main(){ ${cut ? 'if (texture2D(map, vUv).a < 0.5) discard;' : ''} gl_FragColor = vC; }`,
+      uniforms: { map: { value: m.material.uniforms.map.value } },
+      side: THREE.DoubleSide,
+    });
+    (['opaque','cutout','unlit','water'].includes(g.kind) ? opaque : trans).push(m);
+  }
+  s.sky.visible = false; // Not a surface, so it has no id.
+  const cam = new THREE.PerspectiveCamera(+(q.get('fov')||60), W / H, 0.5, 20000);
+  const seen = new Map();
+  const px = new Uint8Array(W * H * 4);
+  // Add the pixels of each id in the frame just rendered to its count.
+  //
+  const read = () => {
+    s.renderer.readRenderTargetPixels(rt, 0, 0, W, H, px);
+    for (let i = 0; i < px.length; i += 4) {
+      const v = px[i] | (px[i+1] << 8) | (px[i+2] << 16);
+      if (v) seen.set(v - 1, (seen.get(v - 1) || 0) + 1);
+    }
+  };
+  const views = JSON.parse(q.get('views'));
+  s.renderer.setRenderTarget(rt);
+  s.renderer.setClearColor(0x000000, 1);
+  for (const [p, t] of views) {
+    cam.position.set(...p); cam.lookAt(...t); cam.updateMatrixWorld();
+    for (const m of trans) m.visible = false;
+    for (const m of opaque) m.visible = true;
+    s.renderer.clear(true, true, true);
+    s.renderer.render(s.scene, cam); read();
+
+    // Then count the transparent surfaces where they show over the opaque
+    // ones. We lay down the opaque depth on its own and draw the
+    // transparent surfaces against it without writing depth, so that they
+    // can't hide each other.
+    //
+    s.renderer.autoClear = false;
+    for (const m of opaque) m.material.colorWrite = false;
+    s.renderer.clear(true, true, true);
+    s.renderer.render(s.scene, cam);
+    for (const m of opaque) m.visible = false;
+    for (const m of trans) { m.visible = true; m.material.depthWrite = false; }
+    s.renderer.render(s.scene, cam); read();
+    for (const m of opaque) m.material.colorWrite = true;
+    for (const m of trans) m.material.depthWrite = true;
+    s.renderer.autoClear = true;
+  }
+  // Report the ids split back into world surfaces and static models
+  // (convert.py numbers the latter from 100000), along with the pixel
+  // counts and the views they came from.
+  //
+  const ids = [...seen.keys()];
+  const px_ = Object.fromEntries(seen);
+  await fetch('/shot/visible.json', { method: 'POST', body: JSON.stringify({
+    surf: ids.filter(v => v < 100000), smodel: ids.filter(v => v >= 100000).map(v => v - 100000), pixels: px_, views }) });
+  log('visible ' + ids.length);
+} catch (e) { log('EXC ' + e + ' ' + e.stack); }
+fetch('/done', {method:'POST'});
+</script></body></html>

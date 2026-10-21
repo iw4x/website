@@ -539,6 +539,14 @@ for l: en $linguas
       # language on the root html element and remove the repeated
       # attributes from its descendants.
       #
+      # Then there are empty elements. msgfmt writes them self-closed,
+      # which is fine for the void ones such as meta and link. For the
+      # others it is not: an HTML parser treats <span/> as a start tag,
+      # so whatever follows ends up inside it. With <script/> it is much
+      # worse since the rest of the document becomes script text. So
+      # write the end tags back for the elements we leave empty, which
+      # are the hero script and scene layers and the footer flag.
+      #
       # Finally, adjust the canonical URL and site origin. The authored
       # page always names /en and the production origin, which gives us
       # stable text to match here. Rewrite /en for the language being
@@ -547,6 +555,7 @@ for l: en $linguas
       sed -e 's|^<!DOCTYPE html>$||'                                                                                                                             \
           -e 's|^<[?]xml[^>]*[?]>$|<!DOCTYPE html>|'                                                                                                             \
           -e 's| xml\:lang="[a-z]*"||g'                                                                                                                          \
+          -e 's%<(script|div|span)( [^>]*)/>%<\1\2></\1>%g'                                                                                                     \
           -e "s|<html xmlns=\"http\://www\.w3.org/1999/xhtml\" lang=\"en\">|<html xmlns=\"http\://www\.w3.org/1999/xhtml\" lang=\"$lang\" xml\:lang=\"$lang\">|" \
           -e "s|rel=\"canonical\" href=\"https\://iw4x\\.io/en\"|rel=\"canonical\" href=\"https\://iw4x.io/$lang\"|"                                             \
           -e "s|https\\\\://iw4x\\\\.io|$url|g"                                                                                                                  \
@@ -1012,5 +1021,5 @@ html{index}@./: install = false
 
 # And finally collect the whole site under the directory target.
 #
-./: css{site} $pages xml{sitemap} $static inter/ \
+./: css{site} $pages xml{sitemap} $static inter/ three/ hero/ \
     file{robots.txt .htaccess}
