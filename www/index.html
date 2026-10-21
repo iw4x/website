@@ -73,7 +73,7 @@
 
     <main id="main-content" tabindex="-1" class="flex flex-1 flex-col">
       <div class="flex flex-1 flex-col items-center">
-        <section id="home" aria-labelledby="home-heading" class="theme-dark relative isolate flex w-full flex-1 flex-col items-center justify-center overflow-hidden bg-background px-6 py-16 text-foreground">
+        <section id="home" aria-labelledby="home-heading" class="theme-dark relative isolate flex min-h-svh w-full flex-col items-center justify-center overflow-hidden bg-background px-6 py-16 text-foreground">
           <!--
             hero/main.js puts a canvas in here and sets data-ready once the
             first frame is drawn, at which point we fade the whole thing in.
@@ -149,6 +149,46 @@
                 </li>
               </ul>
             </nav>
+          </div>
+
+          <div class="absolute inset-x-0 bottom-6 flex justify-center">
+            <a
+              href="#releases"
+              class="inline-flex min-h-11 items-center gap-2 px-1 text-base tracking-body text-muted transition-[color] duration-150 ease-out hover:text-foreground"
+              ><span>View release archive</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+                ><path d="m6 9 6 6 6-6" /></svg
+              ></a
+            >
+          </div>
+        </section>
+
+        <section id="releases" aria-labelledby="releases-heading" class="w-full border-t border-rule px-6 py-20">
+          <div class="mx-auto grid w-full max-w-5xl gap-y-10">
+            <header>
+              <p class="text-base font-semibold tracking-body text-accent-text">Archive</p>
+              <h2 id="releases-heading" class="mt-2 text-heading font-bold tracking-heading text-foreground">Release archive</h2>
+            </header>
+
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2">
+                <p class="text-base tracking-body text-muted">Earlier IW4x client builds, kept for reference.</p>
+
+                <a
+                  href="https://github.com/iw4x/iw4x-client/releases"
+                  class="inline-flex min-h-11 items-center text-base font-semibold tracking-body text-foreground underline underline-offset-4 transition-[color] duration-150 ease-out hover:text-accent-text"
+                  >All releases</a
+                >
+              </div>
+
+              <!--
+                The rows below are generated when the site is built, from the
+                iw4x-client release feed on GitHub. See www/buildfile for how,
+                and po/strings.html for the text they are written with.
+              -->
+              <ul class="mt-6 border-t border-border sm:grid sm:auto-rows-fr">
+                <!--@releases@-->
+              </ul>
+            </div>
           </div>
         </section>
       </div>
