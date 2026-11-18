@@ -129,8 +129,11 @@ $ b './po/@../website-build/po/pot{iw4x}'
 $ b
 ```
 
-The result lands in `../website-build/iw4x-website/www/` and is an
-essentially literal image of what gets published:
+The generated pages and stylesheet land in
+`../website-build/iw4x-website/www/`. The static files (the fonts and
+the hero scripts and maps) are used from `www/` as they are and only
+come together with the generated ones on installation, which produces
+the tree that gets published:
 
 ```
 www/
@@ -143,19 +146,24 @@ www/
   en/index.html
   fr/index.html         one directory per language in po/LINGUAS
   inter/
+  three/
+  hero/
 ```
 
 ### Previewing the site
 
-There is no development server. The output directory is a static tree,
-so any file server will do:
+There is no development server. The installed site is a static tree, so
+any file server will do:
 
 ```
-$ cd ../website-build/iw4x-website/www
+$ b install: config.install.root=/tmp/iw4x-preview
+$ cd /tmp/iw4x-preview/share/iw4x-website/www
 $ python3 -m http.server 8080
 ```
 
-Then open <http://localhost:8080/en/>.
+Then open <http://localhost:8080/en/>. Note that the output directory has
+none of the static files, so serving it shows the page without its fonts
+and hero scene.
 
 Note that this serves the files without the generated `.htaccess`, so
 the redirects described there are not in effect. Browse to `/en/` and
