@@ -20,9 +20,8 @@
 # There is one gettext detail that ends up affecting the HTML itself.
 # msgfmt --xml replaces element text but doesn't replace attribute
 # values. Thus any text that needs a translation has to exist as element
-# text. This is the reason an icon-only link in www/index.html has a
-# visually hidden span instead of putting its label exclusively in
-# aria-label.
+# text. This is the reason each navigation landmark in www/index.html
+# takes its name from a visually hidden span through aria-labelledby.
 #
 # The page description is the one current exception. It lives in the
 # content attribute of <meta name="description"> and so remains English

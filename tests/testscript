@@ -506,8 +506,7 @@
 
     sed -n -e 's%.*>(ZZ TAGLINE)</p>.*%\1%p' $page >'ZZ TAGLINE'
 
-    sed -n -e 's%.*<span class="sr-only">(ZZ DISCORD)</span>.*%\1%p' \
-      $page >'ZZ DISCORD'
+    sed -n -e 's%.*>(ZZ DISCORD)</a>.*%\1%p' $page >'ZZ DISCORD'
 
     sed -n -e 's%.*>(IW4)<span class="text-wordmark-accent">x</span>.*%\1%p' \
       $page >'IW4'
