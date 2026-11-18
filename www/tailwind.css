@@ -192,6 +192,8 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    scroll-padding-block-start: 2rem;
   }
 
   /* A measure, so that prose stays readable on a wide viewport. */

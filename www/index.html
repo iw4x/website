@@ -71,24 +71,60 @@
       >Skip to main content</a
     >
 
+    <!--
+      The header lies over the top of the hero, so that the map scene runs
+      behind it as well. It is dark for the same reason as the hero.
+    -->
+    <header class="theme-dark absolute inset-x-0 top-0 z-10 px-6">
+      <nav aria-labelledby="site-nav-label" class="mx-auto flex min-h-18 w-full max-w-5xl items-center justify-center">
+        <span id="site-nav-label" class="sr-only">Main</span>
+
+        <ul class="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 min-[30rem]:gap-x-7">
+          <li>
+            <a
+              href="#about"
+              class="inline-flex min-h-11 min-w-11 items-center justify-center text-sm tracking-body text-muted underline-offset-4 transition-[color] duration-150 ease-out hover:text-foreground hover:underline"
+              >About IW4x</a
+            >
+          </li>
+
+          <li>
+            <a
+              href="#servers"
+              class="inline-flex min-h-11 min-w-11 items-center justify-center text-sm tracking-body text-muted underline-offset-4 transition-[color] duration-150 ease-out hover:text-foreground hover:underline"
+              >Server hosting</a
+            >
+          </li>
+
+          <li>
+            <a
+              href="#releases"
+              class="inline-flex min-h-11 min-w-11 items-center justify-center text-sm tracking-body text-muted underline-offset-4 transition-[color] duration-150 ease-out hover:text-foreground hover:underline"
+              >Release archive</a
+            >
+          </li>
+        </ul>
+      </nav>
+    </header>
+
     <main id="main-content" tabindex="-1" class="flex flex-1 flex-col">
       <div class="flex flex-1 flex-col items-center">
-        <section id="home" aria-labelledby="home-heading" class="theme-dark relative isolate flex min-h-svh w-full flex-col items-center justify-center overflow-hidden bg-background px-6 py-16 text-foreground">
+        <section id="home" aria-labelledby="home-heading" class="theme-dark relative isolate flex min-h-svh w-full flex-col items-center justify-center overflow-hidden bg-background px-6 pt-24 pb-16 text-foreground">
           <!--
             hero/main.js puts a canvas in here and sets data-ready once the
             first frame is drawn, at which point we fade the whole thing in.
             The layers on top of the canvas are there to keep the text
-            readable: an overall darkening, a darker pool behind the text,
-            and a fade into the hero background at the bottom.
+            readable: a darker pool behind the text, and a fade that darkens
+            the top behind the header and becomes the hero background at the
+            bottom.
           -->
           <div
             id="hero-scene"
             aria-hidden="true"
             class="pointer-events-none absolute inset-0 -z-10 opacity-0 transition-opacity duration-1000 ease-out data-ready:opacity-100 motion-reduce:transition-none"
           >
-            <div class="absolute inset-0 bg-background/45"></div>
-            <div class="absolute inset-0 bg-radial from-background/80 from-15% via-background/40 via-45% to-transparent to-80%"></div>
-            <div class="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-b from-transparent to-background"></div>
+            <div class="absolute inset-0 bg-radial-[at_50%_42%] from-background/60 via-background/15 via-65% to-transparent"></div>
+            <div class="absolute inset-0 bg-linear-to-b from-background/40 via-background/15 via-45% to-background"></div>
           </div>
 
           <div class="flex w-full max-w-120 flex-col items-center text-center">
