@@ -545,8 +545,15 @@ for g in order:
     # Add up the pixels each color map covers over all its groups. We size
     # the textures by that below.
     #
+    # Note that a color map can be shared by groups of different kinds. A
+    # tree model, for example, often draws its trunk opaque and its canopy
+    # as a cutout from the same image. The groups come in drawing order,
+    # which puts the opaque ones first, so we keep the alpha if any of the
+    # groups needs it.
+    #
     if g['info']['color']:
-        t = textures.setdefault(g['info']['color'], {'kind': g['info']['kind'], 'px': 0})
+        t = textures.setdefault(g['info']['color'], {'alpha': False, 'px': 0})
+        t['alpha'] |= g['info']['kind'] in ('cutout', 'blend', 'cloud', 'add')
         t['px'] += g.get('px', 0)
 
 open(os.path.join(O, 'scene.bin'), 'wb').write(buf.getvalue())
@@ -628,7 +635,7 @@ total = 0
 if not args.no_textures:
     totalpx = max(1, sum(t['px'] for t in textures.values()))
     for name, t in sorted(textures.items()):
-        kind = t['kind']
+        alpha = t['alpha']
         share = t['px'] / totalpx
         try:
             im = open_dds(name)
@@ -636,7 +643,6 @@ if not args.no_textures:
             print(f'texture {name}: {e}', file=sys.stderr)
             continue
         im.load()
-        alpha = kind in ('cutout', 'blend', 'cloud', 'add')
         im = im.convert('RGBA' if alpha else 'RGB')
         if alpha:
             im = bleed(im)
