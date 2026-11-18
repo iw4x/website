@@ -315,20 +315,19 @@
 
         <section id="releases" aria-labelledby="releases-heading" class="w-full border-t border-rule px-6 py-20">
           <div class="mx-auto grid w-full max-w-5xl gap-y-10">
-            <header>
-              <p class="text-base font-semibold tracking-body text-accent-text">Archive</p>
-              <h2 id="releases-heading" class="mt-2 text-heading font-bold tracking-heading text-foreground">Release archive</h2>
+            <header class="text-center">
+              <h2 id="releases-heading" class="text-heading font-bold tracking-heading text-foreground">Release archive</h2>
+
+              <p class="mx-auto mt-4 text-base tracking-body text-muted">Earlier IW4x client builds, kept for reference.</p>
             </header>
 
             <div class="min-w-0">
-              <p class="text-base tracking-body text-muted">Earlier IW4x client builds, kept for reference.</p>
-
               <!--
                 The rows below are generated when the site is built, from the
                 iw4x-client release feed on GitHub. See www/buildfile for how,
                 and po/strings.html for the text they are written with.
               -->
-              <ul class="mt-6 border-t border-border sm:grid sm:auto-rows-fr">
+              <ul class="border-t border-border sm:grid sm:auto-rows-fr">
                 <!--@releases@-->
               </ul>
             </div>
