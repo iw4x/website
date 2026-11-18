@@ -321,15 +321,7 @@
             </header>
 
             <div class="min-w-0">
-              <div class="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2">
-                <p class="text-base tracking-body text-muted">Earlier IW4x client builds, kept for reference.</p>
-
-                <a
-                  href="https://github.com/iw4x/iw4x-client/releases"
-                  class="inline-flex min-h-11 items-center text-base font-semibold tracking-body text-foreground underline underline-offset-4 transition-[color] duration-150 ease-out hover:text-accent-text"
-                  >All releases</a
-                >
-              </div>
+              <p class="text-base tracking-body text-muted">Earlier IW4x client builds, kept for reference.</p>
 
               <!--
                 The rows below are generated when the site is built, from the
@@ -345,7 +337,47 @@
       </div>
     </main>
 
-    <footer class="w-full border-t border-rule px-6 py-10">
+    <footer class="w-full border-t border-rule px-6 pt-5 pb-10">
+      <nav aria-labelledby="footer-label" class="mx-auto mb-6 max-w-5xl">
+        <span id="footer-label" class="sr-only">More from IW4x</span>
+
+        <ul class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <li>
+            <a
+              href="https://discord.com/invite/pV2qJscTXf"
+              class="inline-flex min-h-11 items-center text-sm tracking-body text-muted transition-[color] duration-150 ease-out hover:text-foreground hover:underline"
+              >IW4x on Discord</a
+            >
+          </li>
+
+          <li>
+            <a
+              href="https://github.com/iw4x"
+              class="inline-flex min-h-11 items-center text-sm tracking-body text-muted transition-[color] duration-150 ease-out hover:text-foreground hover:underline"
+              >IW4x on GitHub</a
+            >
+          </li>
+
+          <li>
+            <a
+              href="https://github.com/iw4x/iw4x-client/releases"
+              class="inline-flex min-h-11 items-center text-sm tracking-body text-muted transition-[color] duration-150 ease-out hover:text-foreground hover:underline"
+              >All releases</a
+            >
+          </li>
+
+          <li>
+            <a
+              href="#home"
+              class="inline-flex min-h-11 items-center gap-2 text-sm tracking-body text-muted transition-[color] duration-150 ease-out hover:text-foreground hover:underline"
+              ><span>Back to download</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"
+                ><path d="m6 15 6-6 6 6" /></svg
+              ></a
+            >
+          </li>
+        </ul>
+      </nav>
+
       <p class="mx-auto mb-8 max-w-xl text-center text-sm tracking-body text-balance text-muted"
         >IW4x is not affiliated with or endorsed by Activision. Call of Duty and Modern Warfare are trademarks of Activision Publishing, Inc.</p
       >
