@@ -33,10 +33,25 @@
     index.html
     404.html
     release-row.html
+    devlog/index.html.in
+    devlog/post.html.in
+    devlog/post-row.html
+    devlog/contents-row.html
     EOO
 
     sed -n -e 's%^tailwind_scan = (.+)$%\1%p' $project_src/www/buildfile \
-      >'html{index 404} file{release-row.html}'
+      >'html{index 404} file{release-row.html devlog/index.html.in devlog/post.html.in devlog/post-row.html devlog/contents-row.html}'
+  }
+
+  # The posts are not part of the Tailwind scan set, so a utility class in
+  # their raw HTML would produce no CSS. Nothing on the page would point
+  # to that, so check that the posts use no classes at all.
+  #
+  : devlog-posts-are-plain-markup
+  :
+  {
+    for f: $path_search('*.md', $project_src/www/devlog/)
+      sed -n -e 's%.*( class=").*%\1%p' $project_src/www/devlog/$f
   }
 
   # The hero background is the one script on the site. It is an external
@@ -51,7 +66,8 @@
     <script type="module" src="../hero/main.js"></script>
     EOO
 
-    for f: index.html 404.html release-row.html
+    for f: index.html 404.html release-row.html devlog/index.html.in \
+           devlog/post.html.in devlog/post-row.html devlog/contents-row.html
     {
       sed -n -e 's%.*( on[a-z]+=").*%\1%p' $project_src/www/$f
       sed -n -e 's%.*(javascript:).*%\1%p' $project_src/www/$f
@@ -172,6 +188,12 @@
 
     for l: $linguas
       test -f $site/$l/index.html
+
+    test -f $site/devlog/index.html
+    test -f $site/devlog/lorem-ipsum/index.html
+
+    for f: posts.json post.html.in index.html.in post-row.html lorem-ipsum.md
+      test -f $site/devlog/$f == 1
   }
 
   : release-archive
@@ -309,6 +331,42 @@
     sed -n -e 's%.*( on[a-z]+=").*%\1%p' $site/$l/index.html
   }
 
+  : devlog-pages-carry-only-the-hero-script
+  :
+  {
+    sed -n -e 's%^ *(<script.*)$%\1%p' $site/devlog/index.html >>EOO
+    <script type="module" src="../hero/main.js"></script>
+    EOO
+
+    sed -n -e 's%^ *(<script.*)$%\1%p' $site/devlog/lorem-ipsum/index.html >>EOO
+    <script type="module" src="../../hero/main.js"></script>
+    EOO
+  }
+
+  : devlog-post-has-its-entry-and-contents
+  :
+  {
+    p = $site/devlog/lorem-ipsum/index.html
+
+    sed -n -e 's%^ *<title>(.+)</title>$%\1%p' $p >'Lorem ipsum dolor sit amet - IW4x devlog'
+    sed -n -e 's%.*<time datetime="([^"]+)">([^<]+)</time>.*%\1 \2%p' $p >'2026-11-20 November 20, 2026'
+    sed -n -e 's%.*rel="canonical" href="([^"]+)".*%\1%p' $p >'https://iw4x.io/devlog/lorem-ipsum'
+    sed -n -e 's%.*<li><a href="#([^"]+)".*%\1%p' $p >>EOO
+    lorem-ipsum-dolor
+    consectetur-adipiscing
+    incididunt-ut-labore
+    EOO
+
+    sed -n -e 's%^<h3 id="([^"]+)">.*%\1%p' $p >'sed-do-eiusmod-tempor'
+    sed -n -e 's%^<pre><code class="language-cpp"><span class="comment">.*%found%p' $p >'found'
+    sed -n -e 's%.*(<code class="language-).*%\1%p' $p >>EOO
+    <code class="language-
+    <code class="language-
+    EOO
+    sed -n -e 's%.*(@[a-z-]+@).*%\1%p' $p
+    sed -n -e 's%.*(@[a-z-]+@).*%\1%p' $site/devlog/index.html
+  }
+
   : internal-links-resolve
   :
   {
@@ -322,6 +380,14 @@
 
       for -n r <=rel
         test -f $site/$r
+    }
+
+    for p: devlog devlog/lorem-ipsum
+    {
+      sed -n -e 's%.*href="(/[^"#]*)".*%\1%p' $site/$p/index.html >=abs
+
+      for -n a <=abs
+        test -f $site$a/index.html
     }
 
     sed -n -e 's%.*href="(/[^"#]*)".*%\1%p' $site/404.html >=abs
@@ -367,6 +433,8 @@
     for l: en $linguas
       $xmllint --noout $site/$l/index.html
 
+    $xmllint --noout $site/devlog/index.html
+    $xmllint --noout $site/devlog/lorem-ipsum/index.html
     $xmllint --noout $site/404.html
     $xmllint --noout $site/sitemap.xml
   }
@@ -404,14 +472,16 @@
       $site/inter/LICENSE >'SIL OPEN FONT LICENSE Version 1.1'
   }
 
-  : sitemap-lists-every-language
+  : sitemap-lists-every-language-and-the-devlog
   :
   {
     echo en >=expected
     for l: $linguas
       echo $l >+expected
+    echo devlog >+expected
+    echo devlog/lorem-ipsum >+expected
 
-    sed -n -e 's%^ *<loc>https://iw4x\.io/([a-z]+)</loc>$%\1%p' \
+    sed -n -e 's%^ *<loc>https://iw4x\.io/([a-z/-]+)</loc>$%\1%p' \
       $site/sitemap.xml >=actual
 
     diff expected actual

@@ -3,7 +3,8 @@
 This repository contains the source of the IW4x website at
 [iw4x.io](https://iw4x.io).
 
-Each language is published as a single page. Everything a browser loads
+Each language is published as a single page, and there is an English
+devlog at `/devlog`. Everything a browser loads
 is produced by [`build2`](https://build2.org) from the files kept here.
 The one script is the hero background, which draws mp_highrise with
 [three.js](https://threejs.org). It only decorates, and the page reads
@@ -36,6 +37,11 @@ www/                     the website sources
   index.html             the English page, and the source of every other page
   release-row.html       the markup for one row of the release archive
   404.html               the error page, which is not translated
+  devlog/                the devlog, which is English only
+    posts.json           one entry per post, newest first
+    <slug>.md            the text of each post
+    post.html.in         the page every post is published in
+    index.html.in        the devlog index
   tailwind.css           the authored stylesheet
   htaccess.in            the Apache configuration template
   favicon.ico
@@ -53,13 +59,15 @@ reproduces the published site.
 
 ## Prerequisites
 
-| Requirement                                                          | Notes                                                               |
-|----------------------------------------------------------------------|---------------------------------------------------------------------|
-| [build2 toolchain](https://build2.org/install.xhtml) 0.18.0 or later | provides `b`, `bpkg` and `bdep`                                     |
-| GNU gettext 0.23 or later                                            | `xgettext`, `msgfmt`, `msgmerge`; `msginit` to start a new language |
-| `curl`                                                               | to acquire the Tailwind CSS CLI and the release feed                |
-| network access to `github.com` and `api.github.com`                  | likewise, unless you supply the CLI and the feed yourself           |
-| `xmllint` (libxml2), optional                                        | enables the well-formedness checks in the test suite                |
+| Requirement                                                          | Notes                                                                   |
+|----------------------------------------------------------------------|-------------------------------------------------------------------------|
+| [build2 toolchain](https://build2.org/install.xhtml) 0.18.0 or later | provides `b`, `bpkg` and `bdep`                                         |
+| GNU gettext 0.23 or later                                            | `xgettext`, `msgfmt`, `msgmerge`; `msginit` to start a new language     |
+| [cmark-gfm](https://github.com/github/cmark-gfm) 0.29 or later       | converts devlog posts from Markdown; not packaged by every distribution |
+| GNU Source-highlight 3.1 or later                                    | highlights the code blocks in devlog posts                              |
+| `curl`                                                               | to acquire the Tailwind CSS CLI and the release feed                    |
+| network access to `github.com` and `api.github.com`                  | likewise, unless you supply the CLI and the feed yourself               |
+| `xmllint` (libxml2), optional                                        | enables the well-formedness checks in the test suite                    |
 
 Apache needs a few modules that are normally part of the standard
 installation but may not be enabled by default. We use `mod_rewrite`,
@@ -248,6 +256,55 @@ $ b
 The first command replaces `www/releases.json`. The second sees that its
 prerequisite changed and rebuilds the pages made from it.
 
+### Writing a devlog post
+
+A post is its text in `www/devlog/<slug>.md` and an entry in
+`www/devlog/posts.json`. Entries are listed newest first:
+
+```json
+{
+  "slug": "lorem-ipsum",
+  "title": "Lorem ipsum dolor sit amet",
+  "summary": "One or two sentences for the index and the page description.",
+  "topic": "Template",
+  "date": "2026-11-20"
+}
+```
+
+The build publishes the post at `/devlog/<slug>`, adds it to the
+index and the sitemap, and lists its `##` sections at the top. Nothing
+else needs to change. `www/devlog/lorem-ipsum.md` uses everything the
+devlog styles and is the place to start from.
+
+The text is [GitHub Flavored
+Markdown](https://github.github.com/gfm/), converted with `cmark-gfm`
+with tables, strikethrough and autolinks enabled and typographic quotes
+on. Every `##` and `###` heading gets an id made from its text, so
+`## Consectetur & adipiscing` is `#consectetur-adipiscing`; two
+headings with the same text fail the build. Raw HTML such as `<aside>`
+is passed through, but leave out `class` attributes: posts are not
+scanned for Tailwind utilities and the test suite rejects them. Entry
+values in `posts.json` are markup, so write `&amp;` for an ampersand
+there.
+
+To highlight a code block, put its language after the opening fence,
+one of `source-highlight --lang-list`:
+
+````markdown
+```cpp
+int main () {}
+```
+````
+
+The highlighting happens at build time, so the published page carries no
+script. Only function names are colored, in the IW4x lime; comments are in the
+muted text color.
+
+The article typography follows readability research rather than the
+homepage: 18 to 20px text, 1.6 line spacing, about 70 characters a line,
+ragged right rather than justified, and no italic in code. The reasons
+are in the comment above `.prose` in `www/tailwind.css`.
+
 ### Regenerating the hero scenes
 
 Each visit shows one multiplayer map, picked at random, behind the hero.
@@ -295,6 +352,8 @@ change them for that build.
 | `config.iw4x_website.xgettext`            | `xgettext`               |                                                                                                                                                      |
 | `config.iw4x_website.msgfmt`              | `msgfmt`                 |                                                                                                                                                      |
 | `config.iw4x_website.msgmerge`            | `msgmerge`               |                                                                                                                                                      |
+| `config.iw4x_website.cmark_gfm`           | `cmark-gfm`              |                                                                                                                                                      |
+| `config.iw4x_website.source_highlight`    | `source-highlight`       |                                                                                                                                                      |
 
 For example, to build against a Tailwind CLI you already have:
 

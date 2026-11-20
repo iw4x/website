@@ -29,6 +29,18 @@ config [path] config.iw4x_website.xgettext ?= [path] xgettext
 config [path] config.iw4x_website.msgfmt   ?= [path] msgfmt
 config [path] config.iw4x_website.msgmerge ?= [path] msgmerge
 
+# cmark-gfm converts devlog posts from Markdown to XHTML. It is GitHub's
+# fork of cmark, the CommonMark reference implementation, and adds the
+# GitHub extensions such as tables.
+#
+config [path] config.iw4x_website.cmark_gfm ?= [path] cmark-gfm
+
+# source-highlight colors the code blocks in devlog posts. It runs at
+# build time, which keeps every page free of script other than the hero
+# module, as the test suite checks.
+#
+config [path] config.iw4x_website.source_highlight ?= [path] source-highlight
+
 config [path] config.iw4x_website.xmllint  ?= [null]
 
 xmllint = $config.iw4x_website.xmllint
@@ -40,6 +52,9 @@ chmod    = $config.iw4x_website.chmod
 xgettext = $config.iw4x_website.xgettext
 msgfmt   = $config.iw4x_website.msgfmt
 msgmerge = $config.iw4x_website.msgmerge
+
+cmark_gfm        = $config.iw4x_website.cmark_gfm
+source_highlight = $config.iw4x_website.source_highlight
 
 config.environment GETTEXTDATADIR
 
@@ -57,6 +72,12 @@ if ($build.mode != 'skeleton')
 
   msgfmt_version = $process.run_regex($msgfmt --version, \
     '^msgfmt \(GNU gettext-tools\) (.+)$', '\1')
+
+  cmark_gfm_version = $process.run_regex($cmark_gfm --version, \
+    '^cmark-gfm (\S+) .*$', '\1')
+
+  source_highlight_version = $process.run_regex($source_highlight --version, \
+    '^GNU Source-highlight (\S+) .*$', '\1')
 
   gettextdatadir = [dir_path] $src_root/po/
 }
