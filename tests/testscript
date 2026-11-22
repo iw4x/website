@@ -486,9 +486,10 @@
     for l: $linguas
       echo $l >+expected
     echo devlog >+expected
+    echo devlog/moving-to-x64 >+expected
     echo devlog/lorem-ipsum >+expected
 
-    sed -n -e 's%^ *<loc>https://iw4x\.io/([a-z/-]+)</loc>$%\1%p' \
+    sed -n -e 's%^ *<loc>https://iw4x\.io/([a-z0-9/-]+)</loc>$%\1%p' \
       $site/sitemap.xml >=actual
 
     diff expected actual
