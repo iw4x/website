@@ -963,9 +963,11 @@ for s: $devlog_slugs
   # [1]  posts.json
   # [2]  contents-row.html
   # [3]  the post text, in Markdown
+  # [4]  asm.lang
   #
   $p: file{devlog/post.html.in} json{devlog/posts} \
-      file{devlog/contents-row.html} file{devlog/$(s).md}
+      file{devlog/contents-row.html} file{devlog/$(s).md} \
+      file{devlog/asm.lang}
   {
     install = data/www/devlog/$s/
     slug = $s
@@ -1194,7 +1196,15 @@ for s: $devlog_slugs
 
             if $end
             {
-              $source_highlight --src-lang=$lang --out-format=xhtml-css \
+              # source-highlight's own asm doesn't know x64, so for asm we
+              # point it at our definition instead (see devlog/asm.lang).
+              #
+              if ("$lang" == 'asm')
+                def = "--lang-def=$path($<[4])"
+              else
+                def = "--src-lang=$lang"
+
+              $source_highlight $def --out-format=xhtml-css \
                                 --no-doc --input=$src --output=STDOUT >$hl
 
               inside = false
