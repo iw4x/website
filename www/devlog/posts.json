@@ -1,5 +1,12 @@
 [
   {
+    "slug": "moving-to-x64",
+    "title": "Moving IW4x to x64",
+    "summary": "What it took to move the client to the 64-bit build of Modern Warfare 2, walked through with the disassembly we worked from.",
+    "topic": "Engineering",
+    "date": "2026-11-22"
+  },
+  {
     "slug": "lorem-ipsum",
     "title": "Lorem ipsum dolor sit amet",
     "summary": "Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
