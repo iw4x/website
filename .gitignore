@@ -36,3 +36,7 @@
 # Compilation database.
 #
 compile_commands.json
+
+# Testscript output directory (can be a symlink).
+#
+tests/test
