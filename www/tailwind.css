@@ -472,6 +472,23 @@
     padding: 0;
   }
 
+  /*
+   * The names that devlog/follow.js turns into controls, and the lines
+   * they point to. The dotted underline sets such a name apart from a
+   * link, whose underline is solid. follow-on is set while the reader
+   * hovers over or focuses a name, and follow-jump for the two seconds
+   * after a click (the scroll itself ends the hover, see the script).
+   */
+  .prose code.follow {
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 0.2em;
+  }
+
+  .prose :where(code.follow-on, pre span.follow-on, pre span.follow-jump) {
+    background-color: color-mix(in oklab, var(--color-accent-edge) 25%, transparent);
+  }
+
   .prose :where(aside, blockquote) {
     border-inline-start: 3px solid var(--color-accent-edge);
     padding-inline-start: 1em;

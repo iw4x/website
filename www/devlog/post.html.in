@@ -39,6 +39,7 @@
     <link rel="stylesheet" href="../../site.css" />
 
     <script type="module" src="../../hero/main.js"></script>
+    <script type="module" src="../follow.js"></script>
   </head>
 
   <body class="flex min-h-svh flex-col">

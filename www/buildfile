@@ -1476,6 +1476,12 @@ static = html{404}@./ file{favicon.ico}@./
 
 $static: install = data/www/
 
+# The same goes for devlog/follow.js. Every post page loads it as
+# ../follow.js, so it has to end up in devlog/ next to the post
+# directories rather than in any one of them.
+#
+devlog/file{follow.js}@./devlog/: install = data/www/devlog/
+
 # index.html is a slightly different case. It is source for the page
 # rules above and should never appear in the installed tree by itself.
 # Since html derives from doc, it would otherwise pick up the usual
@@ -1486,4 +1492,4 @@ html{index}@./: install = false
 # And finally collect the whole site under the directory target.
 #
 ./: css{site} $pages $devlog_pages xml{sitemap} $static inter/ three/ hero/ \
-    file{robots.txt .htaccess}
+    devlog/file{follow.js}@./devlog/ file{robots.txt .htaccess}
