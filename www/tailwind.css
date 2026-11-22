@@ -304,11 +304,12 @@
  * Paragraphs keep the site's 1.5lh gap, which is the paragraph spacing
  * that criterion asks for.
  *
- * The text is set ragged right. Justified text stretches the spaces
- * between words, and the gaps can line up into rivers that dyslexic
- * readers in particular lose their place in (WCAG 1.4.8 and failure F88).
- * For the same reason we keep automatic hyphenation off, since a word
- * split over two lines is harder to make out.
+ * Where we do knowingly go against WCAG 1.4.8 is the justified text (see
+ * the rule further down for why). Automatic hyphenation would take some
+ * of the edge off, since it gives a line more places to break, but we
+ * keep it off all the same: a word split over two lines is harder to
+ * make out, and dyslexic readers are the ones that justification already
+ * costs the most.
  *
  * Letters keep the font's normal spacing, since crowded letters slow
  * dyslexic readers down in running text (Zorzi et al., PNAS 2012).
@@ -339,6 +340,19 @@
   /* Here the column is the measure, so the base one does not apply. */
   .prose :where(p, li, dt, dd, blockquote, figcaption) {
     max-inline-size: none;
+  }
+
+  /*
+   * Justify the running text, for the even edges of a printed article.
+   * The price is the one that WCAG failure F88 is about: the stretched
+   * spaces can line up into rivers, which dyslexic readers in particular
+   * lose their place in. These are at their worst on a phone, with the
+   * fewest words to a line, and we could justify only from some width up.
+   * But we would rather a post looked the same everywhere, so for now it
+   * is justified on every viewport.
+   */
+  .prose :where(p, li) {
+    text-align: justify;
   }
 
   .prose > :where(* + *) {
