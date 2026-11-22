@@ -54,16 +54,22 @@
       sed -n -e 's%.*( class=").*%\1%p' $project_src/www/devlog/$f
   }
 
-  # The hero background is the one script on the site. It is an external
-  # module so that the CSP can stay at script-src 'self', which also means
-  # nothing else may script: no inline code, no handlers, and no
-  # javascript: URLs.
+  # We have two scripts, the hero background on every page and, on a
+  # devlog post, devlog/follow.js. Both are external modules so that the
+  # CSP can stay at script-src 'self', which also means that nothing else
+  # may script: no inline code, no handlers, and no javascript: URLs.
   #
-  : only-the-hero-script
+  : only-our-own-scripts
   :
   {
     sed -n -e 's%^ *(<script.*)$%\1%p' $project_src/www/index.html >>EOO
     <script type="module" src="../hero/main.js"></script>
+    EOO
+
+    sed -n -e 's%^ *(<script.*)$%\1%p' $project_src/www/devlog/post.html.in \
+      >>EOO
+    <script type="module" src="../../hero/main.js"></script>
+    <script type="module" src="../follow.js"></script>
     EOO
 
     for f: index.html 404.html release-row.html devlog/index.html.in \
@@ -331,7 +337,7 @@
     sed -n -e 's%.*( on[a-z]+=").*%\1%p' $site/$l/index.html
   }
 
-  : devlog-pages-carry-only-the-hero-script
+  : devlog-pages-carry-only-our-scripts
   :
   {
     sed -n -e 's%^ *(<script.*)$%\1%p' $site/devlog/index.html >>EOO
@@ -340,6 +346,7 @@
 
     sed -n -e 's%^ *(<script.*)$%\1%p' $site/devlog/lorem-ipsum/index.html >>EOO
     <script type="module" src="../../hero/main.js"></script>
+    <script type="module" src="../follow.js"></script>
     EOO
   }
 
