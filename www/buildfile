@@ -1356,7 +1356,7 @@ xml{sitemap}:
   #
   depdb string "$url"
   depdb string "$locales"
-  depdb string "$devlog_slugs"
+  depdb string "$regex.merge($devlog_slugs, '(.+)', '\1', ' ')"
 
   diag gen $>
 
