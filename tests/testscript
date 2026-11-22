@@ -423,7 +423,7 @@
         $site/$l/index.html >'../site.css'
 
     sed -n -e 's%.*<link rel="stylesheet" href="([^"]+)" ?/>.*%\1%p' \
-      $site/404.html >'site.css'
+      $site/404.html >'../site.css'
   }
 
   : generated-pages-are-well-formed
