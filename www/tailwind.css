@@ -439,7 +439,6 @@
     overflow-wrap: anywhere;
     tab-size: 4;
     background-color: color-mix(in oklab, var(--color-foreground) 5%, transparent);
-    border-inline-start: 3px solid var(--color-accent-edge);
     padding: 1em 1.25em;
   }
 
