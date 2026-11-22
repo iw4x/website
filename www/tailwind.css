@@ -432,6 +432,25 @@
     padding: 0.1em 0.3em;
   }
 
+  /*
+   * Our listings are IDA's, and with a comment at the end a line easily
+   * runs to 76 characters, while the column only holds about 61 in the
+   * block's font. Rather than have such lines wrap in the middle of an
+   * operand, we let a block reach into the margins on a wide viewport,
+   * far enough for 80 characters. It grows by the same amount on both
+   * sides, which means the code no longer starts quite where the text
+   * does, something we can live with.
+   *
+   * The margin is easiest to read from the inside out. The calc() is the
+   * margin that leaves exactly 80ch inside the padding (100% being the
+   * column and ch a character of the block's own font). The min() makes
+   * it at least the padding, so that the background never hugs the text,
+   * and the max() stops the block 1rem short of the viewport's edge, past
+   * which the page would scroll sideways. Note that 100vw includes the
+   * scrollbar, so with a classic one the block stops a few pixels
+   * further in. Below 48rem there is no margin to speak of, and the block
+   * keeps to the column and wraps (see Devlog articles above).
+   */
   .prose pre {
     font-size: 0.85em;
     line-height: 1.6;
@@ -440,6 +459,11 @@
     tab-size: 4;
     background-color: color-mix(in oklab, var(--color-foreground) 5%, transparent);
     padding: 1em 1.25em;
+
+    @media (width >= 48rem) {
+      margin-inline: max(calc((100% - 100vw) / 2 + 1rem),
+                         min(-1.25em, calc((100% - 80ch) / 2 - 1.25em)));
+    }
   }
 
   .prose pre code {
