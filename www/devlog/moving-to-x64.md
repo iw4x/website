@@ -315,6 +315,24 @@ everything the renderer is going to draw in a frame. The client reads it
 for its debug drawing, for example, to draw the collision bounds of the
 models in view.
 
+```cpp
+struct GfxScene
+{
+  ...
+  float dynamicSpotLightNearPlaneOffset;
+  float dynamicSpotLightLength;
+  GfxVisibleLight visLight[4];
+  GfxVisibleLight visLightShadow[1];
+  unsigned int* entOverflowedDrawBuf;
+  volatile int gfxEntCount;
+  GfxEntity gfxEnts[128];
+  int sceneDObjCount;
+  ...
+  volatile int sceneModelCount;
+  ...
+};
+```
+
 We came across this one while going through our definitions the way
 described above. When we looked for the code that uses `sceneDObjCount`,
 the number of animated entities in the scene, we found nothing at our
