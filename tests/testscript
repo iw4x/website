@@ -196,9 +196,9 @@
       test -f $site/$l/index.html
 
     test -f $site/devlog/index.html
-    test -f $site/devlog/lorem-ipsum/index.html
+    test -f $site/devlog/moving-to-x64/index.html
 
-    for f: posts.json post.html.in index.html.in post-row.html lorem-ipsum.md
+    for f: posts.json post.html.in index.html.in post-row.html moving-to-x64.md
       test -f $site/devlog/$f == 1
   }
 
@@ -344,7 +344,7 @@
     <script type="module" src="../hero/main.js"></script>
     EOO
 
-    sed -n -e 's%^ *(<script.*)$%\1%p' $site/devlog/lorem-ipsum/index.html >>EOO
+    sed -n -e 's%^ *(<script.*)$%\1%p' $site/devlog/moving-to-x64/index.html >>EOO
     <script type="module" src="../../hero/main.js"></script>
     <script type="module" src="../follow.js"></script>
     EOO
@@ -353,23 +353,28 @@
   : devlog-post-has-its-entry-and-contents
   :
   {
-    p = $site/devlog/lorem-ipsum/index.html
+    p = $site/devlog/moving-to-x64/index.html
 
-    sed -n -e 's%^ *<title>(.+)</title>$%\1%p' $p >'Lorem ipsum dolor sit amet - IW4x devlog'
-    sed -n -e 's%.*<time datetime="([^"]+)">([^<]+)</time>.*%\1 \2%p' $p >'2026-11-20 November 20, 2026'
-    sed -n -e 's%.*rel="canonical" href="([^"]+)".*%\1%p' $p >'https://iw4x.io/devlog/lorem-ipsum'
+    sed -n -e 's%^ *<title>(.+)</title>$%\1%p' $p >'Moving IW4x to x64 - IW4x devlog'
+    sed -n -e 's%.*<time datetime="([^"]+)">([^<]+)</time>.*%\1 \2%p' $p >'2026-11-22 November 22, 2026'
+    sed -n -e 's%.*rel="canonical" href="([^"]+)".*%\1%p' $p >'https://iw4x.io/devlog/moving-to-x64'
     sed -n -e 's%.*<li><a href="#([^"]+)".*%\1%p' $p >>EOO
-    lorem-ipsum-dolor
-    consectetur-adipiscing
-    incididunt-ut-labore
+    why-the-address-space-runs-out
+    finding-our-way-around
+    out-of-reach
+    inlined-away
+    structures-that-don-t-quite-match
+    what-x64-left-out
+    rebuilding-the-console
+    two-c-runtimes
+    a-stale-pointer-in-the-zone-loader
+    streaming-plain-mp3s
+    playing-with-x86
+    pure-servers
+    steam
+    what-is-not-there-yet
     EOO
 
-    sed -n -e 's%^<h3 id="([^"]+)">.*%\1%p' $p >'sed-do-eiusmod-tempor'
-    sed -n -e 's%^<pre><code class="language-cpp"><span class="comment">.*%found%p' $p >'found'
-    sed -n -e 's%.*(<code class="language-).*%\1%p' $p >>EOO
-    <code class="language-
-    <code class="language-
-    EOO
     sed -n -e 's%.*(@[a-z-]+@).*%\1%p' $p
     sed -n -e 's%.*(@[a-z-]+@).*%\1%p' $site/devlog/index.html
   }
@@ -389,7 +394,7 @@
         test -f $site/$r
     }
 
-    for p: devlog devlog/lorem-ipsum
+    for p: devlog devlog/moving-to-x64
     {
       sed -n -e 's%.*href="(/[^"#]*)".*%\1%p' $site/$p/index.html >=abs
 
@@ -441,7 +446,7 @@
       $xmllint --noout $site/$l/index.html
 
     $xmllint --noout $site/devlog/index.html
-    $xmllint --noout $site/devlog/lorem-ipsum/index.html
+    $xmllint --noout $site/devlog/moving-to-x64/index.html
     $xmllint --noout $site/404.html
     $xmllint --noout $site/sitemap.xml
   }
@@ -487,7 +492,6 @@
       echo $l >+expected
     echo devlog >+expected
     echo devlog/moving-to-x64 >+expected
-    echo devlog/lorem-ipsum >+expected
 
     sed -n -e 's%^ *<loc>https://iw4x\.io/([a-z0-9/-]+)</loc>$%\1%p' \
       $site/sitemap.xml >=actual

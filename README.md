@@ -263,18 +263,17 @@ A post is its text in `www/devlog/<slug>.md` and an entry in
 
 ```json
 {
-  "slug": "lorem-ipsum",
-  "title": "Lorem ipsum dolor sit amet",
+  "slug": "moving-to-x64",
+  "title": "Moving IW4x to x64",
   "summary": "One or two sentences for the index and the page description.",
-  "topic": "Template",
-  "date": "2026-11-20"
+  "topic": "Engineering",
+  "date": "2026-11-22"
 }
 ```
 
 The build publishes the post at `/devlog/<slug>`, adds it to the
 index and the sitemap, and lists its `##` sections at the top. Nothing
-else needs to change. `www/devlog/lorem-ipsum.md` uses everything the
-devlog styles and is the place to start from.
+else needs to change.
 
 The text is [GitHub Flavored
 Markdown](https://github.github.com/gfm/), converted with `cmark-gfm`
