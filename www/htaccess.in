@@ -28,13 +28,11 @@ DirectorySlash Off
 # needs to embed us or be embedded by us. So we can keep this fairly
 # restrictive without having to punch holes in it later.
 #
-# We have two scripts, the hero background (hero/main.js with three.js)
-# and devlog/follow.js, and both are served from here, so script-src
-# 'self' is all they need. The hero loads its scene with fetch(), which
-# connect-src allows, and styles its canvas through the CSSOM, which
-# style-src 'self' doesn't restrict. And follow.js gets by with even
-# less: it adds spans and toggles classes, and leaves how they look to
-# site.css.
+# The one script is the hero background (hero/main.js and three.js). It
+# is served from here like everything else, so 'self' covers it, and it
+# loads its scene with fetch(), which connect-src already allows. Note
+# that it styles its canvas through the CSSOM, which style-src 'self'
+# doesn't restrict.
 #
 # data: for images is the other small exception. The rest is just the
 # usual browser hardening for a static HTTPS site.
