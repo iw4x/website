@@ -1,0 +1,13 @@
+# Install the server browser's script along with the map thumbnails it
+# shows on hover.
+#
+# tools/server-list/previews.py makes the thumbnails from the game's map
+# previews and we check them in, the same as the hero bundles. Note that
+# we match them with a wildcard, so a stale one left behind by an earlier
+# run gets installed as well. Clean out maps/ before running it again.
+#
+install.subdirs = true
+
+./: file{main.js}@./ file{maps/index.json} file{maps/*.webp}
+
+file{*}: install = data/www/server-list/

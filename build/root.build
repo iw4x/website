@@ -23,7 +23,38 @@ config [string] config.iw4x_website.url ?= 'https://iw4x.io'
 
 url = $config.iw4x_website.url
 
-config [path] config.iw4x_website.curl     ?= [path] curl
+# The server browser asks the master server for its list from the
+# reader's browser, at this URL. It is the request the game's own browser
+# makes (see ServerList::Refresh() in iw4x-client), and the protocol has
+# to be the one the current client speaks, or the master leaves the
+# servers out.
+#
+# Note that the master answers a page from another origin only if it says
+# that it may, with Access-Control-Allow-Origin, so whatever this names
+# has to send that header for our origin. A path on our own origin, say a
+# proxy or, in a test, a copy of the list, needs no such header.
+#
+config [string] config.iw4x_website.servers.url ?= \
+  'https://master.iw4x.io/v1/servers/iw4x?protocol=153'
+
+servers_url = $config.iw4x_website.servers.url
+
+# The page may only connect to the origins the CSP names, so the master's
+# origin has to be added to connect-src (see www/htaccess.in). A path on
+# our own origin is already covered by 'self', which leaves nothing to
+# add.
+#
+servers_origin = ''
+
+if $regex.match("$servers_url", '^https?://[^/?#]+([/?#].*)?$')
+  servers_origin = $regex.replace("$servers_url", '^(https?://[^/?#]+).*$', '\1')
+elif! $regex.match("$servers_url", '^/([^/].*)?$')
+  fail "config.iw4x_website.servers.url should be an http or https URL \
+or a path on this site, not '$servers_url'"
+
+config [config.report] servers_url
+
+config [path] config.iw4x_website.curl    ?= [path] curl
 config [path] config.iw4x_website.chmod    ?= [path] chmod
 config [path] config.iw4x_website.xgettext ?= [path] xgettext
 config [path] config.iw4x_website.msgfmt   ?= [path] msgfmt

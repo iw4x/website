@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 
 @source "./index.html";
+@source "./servers.html";
 @source "./404.html";
 @source "./release-row.html";
 

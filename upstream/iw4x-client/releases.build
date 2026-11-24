@@ -7,10 +7,11 @@
 #
 # So what we do instead is obtain the release history from GitHub and
 # turn the part we are interested in into markup as part of the build.
-# This still gives us a completely static website once installed, which
-# is particularly useful here since the site deliberately has no
-# client-side scripting (and the testscript checks that this remains the
-# case).
+# This still gives us a completely static website once installed, and
+# the archive reads the same without script. That is not something we
+# can do for the server list (see www/server-list/main.js), whose
+# contents are only good for the moment they are fetched. The release
+# history, on the other hand, stays put between client releases.
 #
 # Most of what follows is then just the configuration needed to describe
 # that request. www/buildfile does the actual fetching and generates the

@@ -163,7 +163,7 @@ tailwind_in = css{tailwind}
 # tailwind.css and the testscript compares its @source entries with this
 # list, so forgetting one side should be caught fairly quickly.
 #
-tailwind_scan = html{index 404} file{release-row.html}
+tailwind_scan = html{index servers 404} file{release-row.html}
 
 css{site}: $tailwind_in $tailwind_cli $tailwind_scan
 {
@@ -377,10 +377,22 @@ alias{update-releases}: $releases_feed
 # made in both places. So let's keep one rule and make English the
 # simple case where there is no msgfmt step.
 #
+# The server browser, servers.html, is the second page that we translate,
+# and it goes through the same rule. It has no release archive, which
+# makes it the simpler case: the marker that the rows replace is not in
+# it, so the rows are never written. It does get the release feed and the
+# row as prerequisites all the same, so that the positions below hold for
+# both pages. This means it is regenerated when the feed changes, which
+# costs us a page that comes out the same.
+#
+# The server browser is published one directory deeper, as
+# <lang>/servers/index.html, which gives it the slashless /<lang>/servers
+# URL in the same way that /<lang> is served from <lang>/index.html.
+#
 # Note that the recipe below refers to its prerequisites by position.
 # Keep the order here in sync with those uses:
 #
-# [0]  authored index.html
+# [0]  authored index.html or servers.html
 # [1]  acquired release feed
 # [2]  release-row.html
 # [3]  archive strings in the page language
@@ -393,12 +405,34 @@ alias{update-releases}: $releases_feed
 #
 pages =
 
+# Every page that we publish is one of the documents in one of the
+# languages. Spell that as <lang>:<document> pairs, so that a single loop
+# can go over all of them.
+#
+page_docs =
+
 for l: en $linguas
+  page_docs += "$l:index" "$l:servers"
+
+for ld: $page_docs
 {
-  p = html{$l/index}
+  l = $regex.replace("$ld", '^(.+):.+$', '\1')
+  d = $regex.replace("$ld", '^.+:(.+)$', '\1')
+
+  if ($d == 'index')
+  {
+    p = html{$l/index}
+    i = data/www/$l/
+  }
+  else
+  {
+    p = html{$l/$d/index}
+    i = data/www/$l/$d/
+  }
+
   pages += $p
 
-  prereqs = html{index} $releases_feed file{release-row\.html}
+  prereqs = html{$d} $releases_feed file{release-row\.html}
 
   if ($l == 'en')
   {
@@ -423,7 +457,7 @@ for l: en $linguas
 
   $p: $prereqs
   {
-    install = data/www/$l/
+    install = $i
     lang = $l
   }
 
@@ -452,6 +486,7 @@ for l: en $linguas
     depdb string "$lang"
     depdb string "$releases_count"
     depdb string "$releases_asset"
+    depdb string "$servers_url"
 
     # msgfmt finds the ITS data directory through GETTEXTDATADIR. There
     # is nothing in its command line from which build2 could rediscover
@@ -544,20 +579,26 @@ for l: en $linguas
       # others it is not: an HTML parser treats <span/> as a start tag,
       # so whatever follows ends up inside it. With <script/> it is much
       # worse since the rest of the document becomes script text. So
-      # write the end tags back for the elements we leave empty, which
-      # are the hero script and scene layers and the footer flag.
+      # write the end tags back for the elements we leave empty. On the
+      # homepage these are the hero script and scene layers and the
+      # footer flag. The server browser adds the paragraphs, the table
+      # body, and the table cells that its script fills in.
       #
-      # Finally, adjust the canonical URL and site origin. The authored
-      # page always names /en and the production origin, which gives us
-      # stable text to match here. Rewrite /en for the language being
-      # generated first, then substitute the configured origin.
+      # Finally, adjust the canonical URL, the links between our pages,
+      # and the site origin. The authored pages always name /en and the
+      # production origin, which gives us stable text to match here.
+      # Rewrite /en for the language being generated first, then
+      # substitute the configured origin. Note that the hreflang
+      # alternates keep naming every language, /en included, as they
+      # should.
       #
       sed -e 's|^<!DOCTYPE html>$||'                                                                                                                             \
           -e 's|^<[?]xml[^>]*[?]>$|<!DOCTYPE html>|'                                                                                                             \
           -e 's| xml\:lang="[a-z]*"||g'                                                                                                                          \
-          -e 's%<(script|div|span)( [^>]*)/>%<\1\2></\1>%g'                                                                                                     \
+          -e 's%<(script|div|span|p|tbody|td)( [^>]*)/>%<\1\2></\1>%g'                                                                                          \
           -e "s|<html xmlns=\"http\://www\.w3.org/1999/xhtml\" lang=\"en\">|<html xmlns=\"http\://www\.w3.org/1999/xhtml\" lang=\"$lang\" xml\:lang=\"$lang\">|" \
-          -e "s|rel=\"canonical\" href=\"https\://iw4x\\.io/en\"|rel=\"canonical\" href=\"https\://iw4x.io/$lang\"|"                                             \
+          -e 's%(rel="canonical" href="[^"]*)/en(/|")%\1/'"$lang"'\2%'                                                                                          \
+          -e 's%href="/en([^a-z])%href="/'"$lang"'\1%g'                                                                                                          \
           -e "s|https\\\\://iw4x\\\\.io|$url|g"                                                                                                                  \
           "$x" >"$t"
 
@@ -636,6 +677,16 @@ po/strings.html and www/buildfile have to agree on the ids"
     # generated values and the delimiter picked for sed. There is little
     # benefit in introducing that representation here.
     #
+    # There is one other substitution that we make on the way, and for
+    # the same reason it is not sed's. The server browser's table names
+    # the master server's list in its data-src attribute as
+    # @servers-url@, which becomes the configured URL. Like the release
+    # URLs, it goes into a double-quoted attribute, so we escape it the
+    # same way.
+    #
+    servers_href = $string.replace("$servers_url", '&', '&amp;')
+    servers_href = $string.replace("$servers_href", '"', '&quot;')
+
     true >$o
 
     for -n line <="$t"
@@ -878,7 +929,7 @@ in $path($<[1]): $published"
 config.iw4x_website.releases.repository"
       }
       else
-        echo "$line" >>$o
+        echo $string.replace("$line", '@servers-url@', "$servers_href") >>$o
     }
 
     # Leave $t in place when the recipe ends. The redirection which
@@ -930,25 +981,32 @@ xml{sitemap}:
   echo '<?xml version="1.0" encoding="UTF-8"?>' >$o
   echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' >>$o
 
-  for l: en $linguas
+  # There are two documents, the homepage at /<lang> and the server
+  # browser at /<lang>/servers, so the path after the language is either
+  # empty or /servers.
+  #
+  for s: '' /servers
   {
-    echo "  <url>" >>$o
-    echo "    <loc>$url/$l</loc>" >>$o
-
-    # Now repeat the full alternate set for this URL. It looks a little
-    # repetitive when generated, but each entry has to describe its
-    # relation to every other language version, so there isn't really
-    # anything to factor out in the resulting XML.
-    #
-    for a: en $linguas
+    for l: en $linguas
     {
-      echo "    <xhtml:link rel=\"alternate\" hreflang=\"$a\" href=\"$url/$a\"/>" >>$o
-    }
+      echo "  <url>" >>$o
+      echo "    <loc>$url/$l$s</loc>" >>$o
 
-    # And use English for the language-neutral entry.
-    #
-    echo "    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"$url/en\"/>" >>$o
-    echo "  </url>" >>$o
+      # Now repeat the full alternate set for this URL. It looks a little
+      # repetitive when generated, but each entry has to describe its
+      # relation to every other language version, so there isn't really
+      # anything to factor out in the resulting XML.
+      #
+      for a: en $linguas
+      {
+        echo "    <xhtml:link rel=\"alternate\" hreflang=\"$a\" href=\"$url/$a$s\"/>" >>$o
+      }
+
+      # And use English for the language-neutral entry.
+      #
+      echo "    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"$url/en$s\"/>" >>$o
+      echo "  </url>" >>$o
+    }
   }
 
   echo '</urlset>' >>$o
@@ -988,19 +1046,31 @@ file{robots.txt}:
 # there, since it has to follow LINGUAS. So leave a @locales@ hole in
 # the template and fill it from the value above.
 #
+# The master server's origin is the same kind of thing. It follows
+# config.iw4x_website.servers.url and the CSP has to name it (see
+# build/root.build), so htaccess.in has a @servers-origin@ hole for it
+# as well. Note that the origin may be empty, which is why the hole sits
+# right after 'self' and we put the separating space in here.
+#
 file{.htaccess}: file{htaccess.in}
 {
   install = data/www/
 }
 {{
   # Changing LINGUAS changes $locales without changing htaccess.in, so
-  # remember the value explicitly.
+  # remember the value explicitly. The same goes for the origin.
   #
   depdb string "$locales"
+  depdb string "$servers_origin"
 
   diag gen $>
 
-  sed -e "s,@locales@,$locales,g" $path($<) >$path($>)
+  o = ''
+  if ("$servers_origin" != '')
+    o = " $servers_origin"
+
+  sed -e "s,@locales@,$locales,g" -e "s,@servers-origin@,$o,g" \
+      $path($<) >$path($>)
 }}
 
 # 404.html and favicon.ico need no work at all. The @./ qualification is
@@ -1012,14 +1082,22 @@ static = html{404}@./ file{favicon.ico}@./
 
 $static: install = data/www/
 
-# index.html is a slightly different case. It is source for the page
-# rules above and should never appear in the installed tree by itself.
-# Since html derives from doc, it would otherwise pick up the usual
-# installation semantics. Turn those off for this source target.
+# index.html and servers.html are a slightly different case. They are
+# source for the page rules above and should never appear in the
+# installed tree by themselves. Since html derives from doc, they would
+# otherwise pick up the usual installation semantics. Turn those off for
+# these source targets.
 #
-html{index}@./: install = false
+html{index}@./:   install = false
+html{servers}@./: install = false
 
 # And finally collect the whole site under the directory target.
 #
+# Note that the server browser's script and its map thumbnails live in
+# server-list/ at the site root, since every language's /<lang>/servers
+# loads them from there. The directory is not called servers/, though. A
+# request for /servers, without a language, would then find a real
+# directory and so would not be sent on to /en/servers (see htaccess.in).
+#
 ./: css{site} $pages xml{sitemap} $static inter/ three/ hero/ \
-    file{robots.txt .htaccess}
+    server-list/ file{robots.txt .htaccess}

@@ -10,10 +10,13 @@
     for l: $linguas
       echo $l >+expected
 
-    sed -n -e 's%^ *<link rel="alternate" hreflang="([a-z]+)" .*%\1%p' \
-      $project_src/www/index.html >=actual
+    for f: index.html servers.html
+    {
+      sed -n -e 's%^ *<link rel="alternate" hreflang="([a-z]+)" .*%\1%p' \
+        $project_src/www/$f >=actual
 
-    diff expected actual
+      diff expected actual
+    }
   }
 
   : every-language-has-a-catalogue
@@ -31,27 +34,33 @@
   {
     sed -n -e 's%^@source "\./(.+)";$%\1%p' $project_src/www/tailwind.css >>EOO
     index.html
+    servers.html
     404.html
     release-row.html
     EOO
 
     sed -n -e 's%^tailwind_scan = (.+)$%\1%p' $project_src/www/buildfile \
-      >'html{index 404} file{release-row.html}'
+      >'html{index servers 404} file{release-row.html}'
   }
 
-  # The hero background is the one script on the site. It is an external
-  # module so that the CSP can stay at script-src 'self', which also means
-  # nothing else may script: no inline code, no handlers, and no
-  # javascript: URLs.
+  # We have two scripts, the hero background on both pages and, on the
+  # server browser, server-list/main.js. Both are external modules so that
+  # the CSP can stay at script-src 'self', which also means that nothing
+  # else may script: no inline code, no handlers, and no javascript: URLs.
   #
-  : only-the-hero-script
+  : only-our-own-scripts
   :
   {
     sed -n -e 's%^ *(<script.*)$%\1%p' $project_src/www/index.html >>EOO
     <script type="module" src="../hero/main.js"></script>
     EOO
 
-    for f: index.html 404.html release-row.html
+    sed -n -e 's%^ *(<script.*)$%\1%p' $project_src/www/servers.html >>EOO
+    <script type="module" src="../../hero/main.js"></script>
+    <script type="module" src="../../server-list/main.js"></script>
+    EOO
+
+    for f: index.html servers.html 404.html release-row.html
     {
       sed -n -e 's%.*( on[a-z]+=").*%\1%p' $project_src/www/$f
       sed -n -e 's%.*(javascript:).*%\1%p' $project_src/www/$f
@@ -63,7 +72,58 @@
 
   : no-translatable-attributes
   :
-  sed -n -e 's%.*(aria-label=).*%\1%p' $project_src/www/index.html
+  for f: index.html servers.html
+    sed -n -e 's%.*(aria-label=).*%\1%p' $project_src/www/$f
+
+  # The server browser's script finds its text in the page by id, the
+  # same way the release archive finds its strings in po/strings.html.
+  # So every id that the script asks for has to be in the page.
+  #
+  : the-server-browser-has-every-string-its-script-looks-up
+  :
+  {
+    # Note that the sort is announced with text (sort.dir), so the two
+    # directions are not in the script as literals. Note also that \x27
+    # is the single quote that the script's literals are in.
+    #
+    sed -n -e 's%.*text [(]\x27([a-z]+)\x27.*%\1%p' \
+      $project_src/www/server-list/main.js >=wanted
+
+    echo ascending >+wanted
+    echo descending >+wanted
+
+    sed -n -e 's%^ *<p id="servers-text-([a-z]+)">.*</p>$%\1%p' \
+      $project_src/www/servers.html >=have
+
+    for -n w <=wanted
+      sed -n -e "s%^$w\$%found%p" have >'found'
+  }
+
+  # The script only asks for the thumbnails that maps/index.json lists,
+  # so every map in there needs its thumbnail and every thumbnail needs
+  # its map in there.
+  #
+  : every-listed-map-thumbnail-is-there
+  :
+  {
+    d = $project_src/www/server-list/maps
+
+    sed -n -e 's%^"(mp_[a-z0-9_]+)",?$%\1%p' $d/index.json >=listed
+
+    for -n m <=listed
+      test -f $d/$(m).webp
+
+    for f: $path_search('*.webp', $d)
+    {
+      m = $path.base($path.leaf([path] $f))
+      sed -n -e "s%^$m\$%found%p" listed >'found'
+    }
+  }
+
+  : the-server-browser-has-somewhere-to-put-the-list-url
+  :
+  sed -n -e 's%.*data-src="(@servers-url@)".*%\1%p' \
+    $project_src/www/servers.html >'@servers-url@'
 
   : the-page-has-somewhere-to-put-the-archive
   :
@@ -170,9 +230,48 @@
     test -f $site/buildfile == 1
     test -f $site/tailwind.css == 1
 
+    test -f $site/en/servers/index.html
+    test -f $site/server-list/main.js
+    test -f $site/server-list/maps/index.json
+    test -f $site/server-list/maps/mp_rust.webp
+    test -f $site/server-list/buildfile == 1
+
+    test -f $site/servers.html == 1
+    test -d $site/servers == 1
+    test -f $site/en/servers.html == 1
+    test -f $site/en/server-list/main.js == 1
+
     for l: $linguas
+    {
       test -f $site/$l/index.html
+      test -f $site/$l/servers/index.html
+    }
   }
+
+  : server-browser
+  :
+  {{
+    page = $site/en/servers/index.html
+
+    : asks-the-configured-master-server
+    :
+    sed -n -e 's%.*data-src="([^"]*)".*%\1%p' $page \
+      >'https://master.iw4x.io/v1/servers/iw4x?protocol=153'
+
+    : may-connect-to-the-master-server
+    :
+    sed -n -e 's%.*connect-src ([^;]*);.*%\1%p' $site/.htaccess \
+      >"'self' https://master.iw4x.io"
+
+    : has-the-text-its-script-writes
+    :
+    sed -n -e 's%^ *<p id="(servers-text-summary)">.*[{]shown[}].*</p>$%\1%p' \
+      $page >'servers-text-summary'
+
+    : has-no-self-closed-elements-that-html-would-leave-open
+    :
+    sed -n -e 's%.*(<(script|div|span|p|tbody|td)( [^>]*)?/>).*%\1%p' $page
+  }}
 
   : release-archive
   :
@@ -287,18 +386,20 @@
   :
   for l: en $linguas
   {
-    sed -n -e 's%^(<!DOCTYPE html>)$%\1%p' $site/$l/index.html \
-      >'<!DOCTYPE html>'
+    for p: $l/index.html $l/servers/index.html
+    {
+      sed -n -e 's%^(<!DOCTYPE html>)$%\1%p' $site/$p >'<!DOCTYPE html>'
 
-    sed -n -e 's%^(<[?]xml).*%\1%p' $site/$l/index.html
+      sed -n -e 's%^(<[?]xml).*%\1%p' $site/$p
 
-    sed -n -e 's%^(<html [^>]*xml:lang="[a-z]+">)$%found%p' \
-      $site/$l/index.html >'found'
+      sed -n -e 's%^(<html [^>]*xml:lang="[a-z]+">)$%found%p' $site/$p \
+        >'found'
 
-    sed -n -e 's%^[^<].*( xml:lang=").*%\1%p' $site/$l/index.html
+      sed -n -e 's%^[^<].*( xml:lang=").*%\1%p' $site/$p
+    }
   }
 
-  : published-pages-carry-only-the-hero-script
+  : published-pages-carry-only-our-scripts
   :
   for l: en $linguas
   {
@@ -306,7 +407,13 @@
     <script type="module" src="../hero/main.js"></script>
     EOO
 
+    sed -n -e 's%^ *(<script.*)$%\1%p' $site/$l/servers/index.html >>EOO
+    <script type="module" src="../../hero/main.js"></script>
+    <script type="module" src="../../server-list/main.js"></script>
+    EOO
+
     sed -n -e 's%.*( on[a-z]+=").*%\1%p' $site/$l/index.html
+    sed -n -e 's%.*( on[a-z]+=").*%\1%p' $site/$l/servers/index.html
   }
 
   : internal-links-resolve
@@ -322,6 +429,25 @@
 
       for -n r <=rel
         test -f $site/$r
+
+      # The server browser is one level deeper and so reaches the site
+      # root with ../../. It also links to the homepage of its own
+      # language, never to another one.
+      #
+      p = $site/$l/servers/index.html
+
+      sed -n -e 's%.*href="(/[^"#]*)".*%\1%p' $p >=abs
+      sed -n -e 's%.*(href|src)="\.\./\.\./([^"#]+)".*%\2%p' $p >=rel
+
+      for -n a <=abs
+        test -f $site$a/index.html
+
+      for -n r <=rel
+        test -f $site/$r
+
+      sed -n -e 's%.*href="/([a-z]+)[#/"].*%\1%p' $p >=langs
+
+      sed -e "s%^$l\$%%" langs | sed -n -e 's%^(.+)$%\1%p'
     }
 
     sed -n -e 's%.*href="(/[^"#]*)".*%\1%p' $site/404.html >=abs
@@ -365,7 +491,10 @@
   ifn! $xmllint
   {
     for l: en $linguas
+    {
       $xmllint --noout $site/$l/index.html
+      $xmllint --noout $site/$l/servers/index.html
+    }
 
     $xmllint --noout $site/404.html
     $xmllint --noout $site/sitemap.xml
@@ -404,14 +533,17 @@
       $site/inter/LICENSE >'SIL OPEN FONT LICENSE Version 1.1'
   }
 
-  : sitemap-lists-every-language
+  : sitemap-lists-every-page-in-every-language
   :
   {
     echo en >=expected
     for l: $linguas
       echo $l >+expected
+    echo en/servers >+expected
+    for l: $linguas
+      echo $l/servers >+expected
 
-    sed -n -e 's%^ *<loc>https://iw4x\.io/([a-z]+)</loc>$%\1%p' \
+    sed -n -e 's%^ *<loc>https://iw4x\.io/([a-z/]+)</loc>$%\1%p' \
       $site/sitemap.xml >=actual
 
     diff expected actual
@@ -478,6 +610,12 @@
 
     msgid "Download"
     msgstr "ZZ-DOWNLOAD"
+
+    msgid "Join"
+    msgstr "ZZ-JOIN"
+
+    msgid "Bots: {count}"
+    msgstr "ZZ-BOTS {count}"
     EOI
 
     echo zz >=src/po/LINGUAS
@@ -533,6 +671,32 @@
     sed -n -e 's%^(<!DOCTYPE html>)$%\1%p' $page >'<!DOCTYPE html>'
     sed -n -e 's%^(<[?]xml).*%\1%p' $page
     sed -n -e 's%^[^<].*( xml:lang=").*%\1%p' $page
+
+    sed -n -e 's%.*href="(/zz/servers)".*%\1%p' $page >'/zz/servers'
+
+    # The server browser goes through the same msgfmt pass, which leaves
+    # rather more of its elements empty than the homepage does: the table
+    # body, the announcer, and the cells of the row template.
+    #
+    servers = $~/out/www/zz/servers/index.html
+
+    sed -n -e 's%^<html [^>]*lang="([a-z]+)" xml:lang="[a-z]+">$%\1%p' \
+      $servers >'zz'
+
+    sed -n -e 's%^ *<link rel="canonical" href="https://iw4x\.io/([a-z/]+)"/>$%\1%p' \
+      $servers >'zz/servers'
+
+    sed -n -e 's%.*(<(script|div|span|p|tbody|td)( [^>]*)?/>).*%\1%p' $servers
+
+    sed -n -e 's%.*<span>(ZZ-JOIN)</span>.*%\1%p' $servers >'ZZ-JOIN'
+
+    sed -n -e 's%^ *<p id="servers-text-bots">(.+)</p>$%\1%p' $servers \
+      >'ZZ-BOTS {count}'
+
+    sed -n -e 's%.*data-src="([^"]+)".*%\1%p' $servers \
+      >'https://master.iw4x.io/v1/servers/iw4x?protocol=153'
+
+    sed -n -e 's%.*href="/(en)[#/"].*%\1%p' $servers
   }
 }}
 
@@ -582,7 +746,8 @@
 
     $* $~/out/ 2>>~%EOE%
       %msgfmt .+po/zz/html\{strings\}%
-      %gen .+www/zz/html\{index\}%
+      %gen .+www/zz/(servers/)?html\{index\}%
+      %gen .+www/zz/(servers/)?html\{index\}%
       EOE
 
     sed -n -e 's%.*(zz CHANGED).*%\1%p' $~/out/www/zz/index.html >'zz CHANGED'
@@ -601,14 +766,14 @@
 
     $* $~/out/ >! 2>!
 
-    sed -n -e 's%.*(\.tabular-nums).*%\1%p' $~/out/www/site.css
+    sed -n -e 's%.*(\.slashed-zero).*%\1%p' $~/out/www/site.css
 
-    sed -i -e 's%^    <title>IW4x</title>$%    <title>IW4x</title>\n    <meta name="x" class="tabular-nums"/>%' \
+    sed -i -e 's%^    <title>IW4x</title>$%    <title>IW4x</title>\n    <meta name="x" class="slashed-zero"/>%' \
       src/www/index.html
 
     $* $~/out/ >! 2>!
 
-    sed -n -e 's%.*(\.tabular-nums).*%\1%p' $~/out/www/site.css >'.tabular-nums'
+    sed -n -e 's%.*(\.slashed-zero).*%\1%p' $~/out/www/site.css >'.slashed-zero'
   }
 
   : removing-a-language-removes-its-page
@@ -915,7 +1080,8 @@
       EOE
 
     $* $~/out/ 2>>~%EOE%
-      %gen .+en/html\{index\}%
+      %gen .+en/(servers/)?html\{index\}%
+      %gen .+en/(servers/)?html\{index\}%
       EOE
 
     sed -n -e 's%.*(r7777).*%\1%p' $~/out/www/en/index.html >>EOO
@@ -923,6 +1089,78 @@
     r7777
     r7777
     EOO
+  }
+}}
+
+: server-list-url
+:
+{{
+  : another-origin-is-asked-and-allowed
+  :
+  {
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
+       "config.iw4x_website.servers.url='https://m.example.org:8080/list?a=1&b=\"2\"'" \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    sed -n -e 's%.*data-src="([^"]*)".*%\1%p' \
+      $~/out/www/en/servers/index.html \
+      >'https://m.example.org:8080/list?a=1&amp;b=&quot;2&quot;'
+
+    sed -n -e 's%.*connect-src ([^;]*);.*%\1%p' $~/out/www/.htaccess \
+      >"'self' https://m.example.org:8080"
+  }
+
+  : a-path-on-this-site-needs-nothing-added
+  :
+  {
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
+       config.iw4x_website.servers.url=/servers.json            \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    sed -n -e 's%.*data-src="([^"]*)".*%\1%p' \
+      $~/out/www/en/servers/index.html >'/servers.json'
+
+    sed -n -e 's%.*connect-src ([^;]*);.*%\1%p' $~/out/www/.htaccess \
+      >"'self'"
+  }
+
+  : anything-else-fails-the-configuration
+  :
+  $* 'configure:' $project_src/@$~/out/       \
+     "config.iw4x_website.releases=$releases" \
+     config.iw4x_website.servers.url=servers.json &?$~/out/*** 2>>~%EOE% != 0
+    %.*%*
+    %.*should be an http or https URL.*%
+    %.*%*
+    EOE
+
+  : changing-it-regenerates-the-pages-and-the-server-rules
+  :
+  {
+    $* 'configure:' $project_src/@$~/out/                       \
+       "config.iw4x_website.tailwind=$tailwind"                 \
+       "config.iw4x_website.tailwind.checksum=$tailwind_sha256" \
+       "config.iw4x_website.releases=$releases"                 \
+       &$~/out/*** >! 2>!
+
+    $* $~/out/ >! 2>!
+
+    $* $~/out/ 'config.iw4x_website.servers.url=https://m.example.org/' \
+      2>=log
+
+    sed -n -e 's%^gen .+(file\{\.htaccess\})$%\1%p' log >'file{.htaccess}'
+    sed -n -e 's%^gen .+(en/servers/html\{index\})$%\1%p' log \
+      >'en/servers/html{index}'
   }
 }}
 
@@ -952,6 +1190,10 @@
            build/bootstrap.build build/root.build                       \
            www/buildfile www/index.html www/404.html www/tailwind.css   \
            www/htaccess.in www/favicon.ico www/release-row.html         \
+           www/servers.html www/server-list/main.js                     \
+           www/server-list/buildfile www/server-list/maps/index.json    \
+           www/server-list/maps/mp_rust.webp                            \
+           tools/server-list/previews.py                                \
            po/buildfile po/LINGUAS po/POTFILES po/strings.html          \
            po/its/iw4x.its po/its/iw4x.loc                              \
            upstream/tailwind/tailwind.build                             \
@@ -999,12 +1241,18 @@
     $* $~/out/ >! 2>!
     $* 'install:' $~/out/ "config.install.root=$~/stage" &$~/stage/*** >! 2>!
 
-    for f: site.css en/index.html 404.html sitemap.xml robots.txt .htaccess
+    for f: site.css en/index.html en/servers/index.html 404.html \
+           sitemap.xml robots.txt .htaccess server-list/main.js
       diff "$~/../checkout-stage/share/iw4x-website/www/$f" \
            "$~/stage/share/iw4x-website/www/$f"
 
     for l: $linguas
+    {
       diff "$~/../checkout-stage/share/iw4x-website/www/$l/index.html" \
            "$~/stage/share/iw4x-website/www/$l/index.html"
+
+      diff "$~/../checkout-stage/share/iw4x-website/www/$l/servers/index.html" \
+           "$~/stage/share/iw4x-website/www/$l/servers/index.html"
+    }
   }
 }}
