@@ -109,6 +109,17 @@ function clean (s)
                    .trim ();
 }
 
+// The modes that IW4 itself has, by the name a server reports in its
+// gametype. We show these by the game's names (see servers-text-mode-*)
+// and ignore what the server reports for gametype_display. That name
+// comes from the server's own files, so it is whatever the server owner
+// (or a mod) put there, typos included. A mode outside this set comes
+// from a mod and shows as Custom, with the server's name for it on a
+// second line.
+//
+const official = new Set (['dm', 'war', 'sd', 'sab', 'dom', 'koth', 'ctf',
+                           'dd', 'arena', 'oneflag', 'gtnw', 'vip']);
+
 // Turn an entry of the master server's list into what we show, or return
 // null if it isn't something we can show or join.
 //
@@ -147,6 +158,11 @@ function server (e)
   const bots = Math.max (0, Number (e.bots) || 0);
   const max = Math.max (0, Number (e.sv_maxclients) || 0);
 
+  const gametype = typeof e.gametype === 'string' ? e.gametype : '';
+  const custom = gametype !== '' && !official.has (gametype)
+    ? clean (e.gametype_display || gametype)
+    : '';
+
   const mod = typeof e.fs_game === 'string'
     ? clean (e.fs_game.replace (/^mods\//, ''))
     : '';
@@ -163,7 +179,10 @@ function server (e)
     // It ends up in a URL, so we only keep one that looks like a map name.
     //
     mapname: /^mp_[a-z0-9_]+$/.test (e.mapname) ? e.mapname : '',
-    mode: clean (e.gametype_display || e.gametype || ''),
+    mode: official.has (gametype) ? text ('mode-' + gametype) :
+          gametype !== ''         ? text ('custom')            :
+                                    '',
+    custom,
     mod
   };
 }
@@ -317,7 +336,8 @@ const compare =
   name: (a, b) => collator.compare (a.name, b.name),
   players: (a, b) => (a.players - b.players) || (a.bots - b.bots),
   map: (a, b) => collator.compare (a.map, b.map),
-  mode: (a, b) => collator.compare (a.mode, b.mode)
+  mode: (a, b) => collator.compare (a.mode, b.mode) ||
+                  collator.compare (a.custom, b.custom)
 };
 
 // A click on the column that is already sorted reverses it. Any other
@@ -347,7 +367,7 @@ function visible ()
       return false;
 
     if (q !== '' &&
-        ![v.name, v.map, v.mode, v.mod, v.address].some (
+        ![v.name, v.map, v.mode, v.custom, v.mod, v.address].some (
           f => f.toLocaleLowerCase (lang).includes (q)))
       return false;
 
@@ -391,6 +411,14 @@ function row (v)
     f ('map').removeAttribute ('title');
   }
   line ('mode', v.mode);
+
+  // Only a custom mode has a second line, the same as the players of a
+  // server with bots.
+  //
+  if (v.custom !== '')
+    line ('custom', v.custom);
+  else
+    f ('custom').remove ();
 
   f ('players').textContent = text ('players', {
     count: numbers.format (v.players),

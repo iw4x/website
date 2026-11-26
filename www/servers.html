@@ -386,6 +386,19 @@
         <p id="servers-text-descending">Sorted by {column}, descending.</p>
         <p id="servers-text-players">{count} of {max}</p>
         <p id="servers-text-bots">Bots: {count}</p>
+        <p id="servers-text-custom">Custom</p>
+        <p id="servers-text-mode-dm">Free-for-all</p>
+        <p id="servers-text-mode-war">Team Deathmatch</p>
+        <p id="servers-text-mode-sd">Search and Destroy</p>
+        <p id="servers-text-mode-sab">Sabotage</p>
+        <p id="servers-text-mode-dom">Domination</p>
+        <p id="servers-text-mode-koth">Headquarters</p>
+        <p id="servers-text-mode-ctf">Capture the Flag</p>
+        <p id="servers-text-mode-dd">Demolition</p>
+        <p id="servers-text-mode-arena">Arena</p>
+        <p id="servers-text-mode-oneflag">One Flag CTF</p>
+        <p id="servers-text-mode-gtnw">Global Thermonuclear War</p>
+        <p id="servers-text-mode-vip">VIP</p>
       </div>
 
       <!--
@@ -401,8 +414,8 @@
         Join link has it in full as well.
 
         The server cell always has both of its lines, so it is the one that
-        sets the height. The cells with a single line, the map, the mode,
-        and the players of a server without bots, are centered on it.
+        sets the height. The cells with a single line, the map, an official
+        mode, and the players of a server without bots, are centered on it.
 
         The map name is as wide as its text rather than its cell, so that
         the thumbnail (see servers-preview) comes up when the pointer is on
@@ -425,7 +438,8 @@
           </td>
 
           <td class="py-3 pe-4 text-base tracking-body text-foreground">
-            <span data-field="mode" translate="no" class="block truncate"></span>
+            <span data-field="mode" class="block truncate"></span>
+            <span data-field="custom" translate="no" class="block truncate text-sm text-muted"></span>
           </td>
 
           <td class="py-3 text-start">
