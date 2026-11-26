@@ -176,19 +176,29 @@
               <div class="flex min-w-0 flex-col gap-1">
                 <label for="servers-mode" class="text-sm font-semibold tracking-body text-foreground">Mode</label>
 
-                <select id="servers-mode" class="min-h-11 w-full min-w-0 border border-border bg-background px-3 text-base tracking-body text-foreground">
-                  <option value="">All modes</option>
-                </select>
+                <div class="relative">
+                  <select id="servers-mode" class="min-h-11 w-full min-w-0 appearance-none border border-border bg-background pr-10 pl-3 text-base tracking-body text-foreground">
+                    <option value="">All modes</option>
+                  </select>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-foreground"
+                    ><path d="m4 6 4 4 4-4"
+                  /></svg>
+                </div>
               </div>
 
               <div class="flex min-w-0 flex-col gap-1">
                 <label for="servers-show" class="text-sm font-semibold tracking-body text-foreground">Show</label>
 
-                <select id="servers-show" class="min-h-11 w-full min-w-0 border border-border bg-background px-3 text-base tracking-body text-foreground">
-                  <option value="players">Servers with players</option>
-                  <option value="bots">Servers with players or bots</option>
-                  <option value="all">All servers</option>
-                </select>
+                <div class="relative">
+                  <select id="servers-show" class="min-h-11 w-full min-w-0 appearance-none border border-border bg-background pr-10 pl-3 text-base tracking-body text-foreground">
+                    <option value="players">Servers with players</option>
+                    <option value="bots">Servers with players or bots</option>
+                    <option value="all">All servers</option>
+                  </select>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-foreground"
+                    ><path d="m4 6 4 4 4-4"
+                  /></svg>
+                </div>
               </div>
             </form>
 
